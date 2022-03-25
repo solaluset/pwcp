@@ -7,60 +7,28 @@ import sys
 from os import getcwd
 from importlib import invalidate_caches
 from importlib.abc import SourceLoader
+from importlib.util import spec_from_loader
 from importlib.machinery import FileFinder, PathFinder
 from .preprocessor import preprocess
 
 
-_finder_cache = {}
 _path_importer_cache = {}
 _path_hooks = []
 
 
 def find_spec_fallback(fullname, path, target):
-    if not sys.path_hooks:
-        return None
-
-    last = len(sys.path_hooks) - 1
-
-    for idx, hook in enumerate(sys.path_hooks):
-        finder = None
+    spec = None
+    for finder in sys.meta_path:
+        if finder == PPyPathFinder:
+            continue
         try:
-            if hook in _finder_cache:
-                finder = _finder_cache[hook]
-                if finder is None:
-                    # We've tried this finder before and got an ImportError
-                    continue
-        except TypeError:
-            # The hook is unhashable
-            pass
-
-        if finder is None:
-            try:
-                if isinstance(path, list):
-                    path = path[0]
-                finder = hook(path)
-            except ImportError:
-                pass
-
-        try:
-            _finder_cache[hook] = finder
-        except TypeError:
-            # The hook is unhashable for some reason so we don't bother
-            # caching it
-            pass
-
-        if finder is not None:
-            spec = finder.find_spec(fullname, target)
-            if (spec is not None and
-                    (spec.loader is not None or idx == last)):
-                # If no __init__.<suffix> was found by any Finder,
-                # we may be importing a namespace package (which
-                # FileFinder.find_spec returns in this case).  But we
-                # only want to return the namespace ModuleSpec if we've
-                # exhausted every other finder first.
-                return spec
-
-    # Module spec not found through any of the finders
+            spec = finder.find_spec(fullname, path, target)
+        except AttributeError:
+            loader = finder.find_module(fullname, path)
+            if loader:
+                spec = spec_from_loader(fullname, loader)
+        if spec and spec.loader:
+            return spec
     return None
 
 
