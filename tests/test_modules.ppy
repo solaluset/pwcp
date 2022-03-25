@@ -1,0 +1,12 @@
+# previously there were issues with asyncio and some other modules
+import asyncio
+from asyncio import get_event_loop
+import hello
+import a_module
+print(
+    asyncio,
+    hello,
+    (a_module.a, a_module.b, a_module.c),
+    get_event_loop,
+    sep='\n'
+)

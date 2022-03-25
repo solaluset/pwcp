@@ -1,0 +1,3 @@
+#define C c
+
+C = 'd'

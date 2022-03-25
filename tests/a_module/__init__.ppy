@@ -1,0 +1,5 @@
+#define B 'b'
+
+from .regular_py import b, c
+
+a = B
