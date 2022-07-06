@@ -1,0 +1,3 @@
+#define P print
+
+P('1' + 1)

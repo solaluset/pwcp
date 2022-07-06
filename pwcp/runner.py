@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 from importlib import util
+from traceback import print_exception
 from . import hooks
 
 
@@ -30,7 +31,13 @@ def main(args=sys.argv[1:]):
         hooks.PPyLoader('__main__', args.file.name)
     )
     module = util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    try:
+        spec.loader.exec_module(module)
+    except Exception as e:
+        tb = e.__traceback__
+        while tb and tb.tb_frame.f_code.co_filename != module.__file__:
+            tb = tb.tb_next
+        print_exception(type(e), e, tb)
 
 
 if __name__ == '__main__':
