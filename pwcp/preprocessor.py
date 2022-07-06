@@ -1,6 +1,7 @@
 from pcpp import Preprocessor
 from io import StringIO
 from os import path
+from .config import FILE_EXTENSION
 
 
 def preprocess(filename, config={}):
@@ -13,7 +14,7 @@ def preprocess(filename, config={}):
     res = out.read()
     if config.get('save_files'):
         dir, file = path.split(filename)
-        if file.endswith('.ppy'):
+        if file.endswith(FILE_EXTENSION):
             file = file.rpartition('.')[0] + '.py'
         else:
             file += '.py'

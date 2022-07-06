@@ -10,6 +10,7 @@ from importlib.abc import SourceLoader
 from importlib.util import spec_from_loader
 from importlib.machinery import FileFinder, PathFinder
 from .preprocessor import preprocess
+from .config import FILE_EXTENSION
 
 
 _path_importer_cache = {}
@@ -106,7 +107,7 @@ class PPyLoader(SourceLoader, Configurable):
         return preprocess(self.path, self._config)
 
 
-loader_details = PPyLoader, [".ppy"]
+loader_details = PPyLoader, [FILE_EXTENSION]
 
 
 def _install():
