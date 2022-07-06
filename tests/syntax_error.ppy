@@ -1,0 +1,3 @@
+#define P(a) print(a)!
+
+P("hello")

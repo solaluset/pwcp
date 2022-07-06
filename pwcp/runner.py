@@ -34,7 +34,17 @@ def main(args=sys.argv[1:]):
     try:
         spec.loader.exec_module(module)
     except Exception as e:
+        # break os.stat to force lazy cache in linecache.updatecache
+        # and take loader.get_source into account
+        def raise_OSError(_):
+            raise OSError()
+        os.stat = raise_OSError
+        if isinstance(e, SyntaxError) and hooks.preprocessed_files.get(e.filename):
+            # replace raw text from file with actual code
+            data = hooks.preprocessed_files[e.filename]
+            e.text = data.splitlines()[e.lineno - 1]
         tb = e.__traceback__
+        # remove outer frames from traceback
         while tb and tb.tb_frame.f_code.co_filename != module.__file__:
             tb = tb.tb_next
         print_exception(type(e), e, tb)

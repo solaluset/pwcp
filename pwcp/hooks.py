@@ -16,6 +16,8 @@ from .config import FILE_EXTENSION
 _path_importer_cache = {}
 _path_hooks = []
 
+preprocessed_files = {}
+
 
 def find_spec_fallback(fullname, path, target):
     spec = None
@@ -104,7 +106,9 @@ class PPyLoader(SourceLoader, Configurable):
     def get_data(self, filename):
         """exec_module is already defined for us, we just have to provide a way
         of getting the source code of the module"""
-        return preprocess(self.path, self._config)
+        # save preprocessed file to display actual SyntaxError
+        data = preprocessed_files[self.path] = preprocess(self.path, self._config)
+        return data.encode()
 
 
 loader_details = PPyLoader, [FILE_EXTENSION]
