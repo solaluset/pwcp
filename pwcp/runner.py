@@ -2,8 +2,11 @@ import argparse
 import os
 import sys
 from importlib import util
+from importlib.machinery import SourceFileLoader
 from traceback import print_exception
+
 from . import hooks
+from .config import FILE_EXTENSION
 
 
 parser = argparse.ArgumentParser(description="Python with C preprocessor")
@@ -26,9 +29,13 @@ def main(args=sys.argv[1:]):
     sys.path.append(os.getcwd())
     args = parser.parse_args(args)
     hooks.install(vars(args))
+    if args.file.name.endswith(FILE_EXTENSION):
+        loader = hooks.PPyLoader
+    else:
+        loader = SourceFileLoader
     spec = util.spec_from_loader(
         '__main__',
-        hooks.PPyLoader('__main__', args.file.name)
+        loader('__main__', args.file.name)
     )
     module = util.module_from_spec(spec)
     try:
