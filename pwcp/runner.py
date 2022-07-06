@@ -42,11 +42,6 @@ def main(args=sys.argv[1:]):
     try:
         spec.loader.exec_module(module)
     except Exception as e:
-        # break os.stat to force lazy cache in linecache.updatecache
-        # and take loader.get_source into account
-        def raise_OSError(_):
-            raise OSError()
-        os.stat = raise_OSError
         if isinstance(e, SyntaxError) and hooks.preprocessed_files.get(e.filename):
             # replace raw text from file with actual code
             data = hooks.preprocessed_files[e.filename]

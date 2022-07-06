@@ -5,6 +5,8 @@
 
 import sys
 from os import getcwd
+import linecache
+from linecache import getlines
 from importlib import invalidate_caches
 from importlib.abc import SourceLoader
 from importlib.util import spec_from_loader
@@ -17,6 +19,12 @@ _path_importer_cache = {}
 _path_hooks = []
 
 preprocessed_files = {}
+
+
+def patched_getlines(filename, module_globals=None):
+    if filename in preprocessed_files:
+        return preprocessed_files[filename].splitlines()
+    return getlines(filename, module_globals)
 
 
 def find_spec_fallback(fullname, path, target):
@@ -130,6 +138,8 @@ def _install():
         # clear any loaders that might already be in use by the FileFinder
         sys.path_importer_cache.clear()
         invalidate_caches()
+        # patch getlines
+        linecache.getlines = patched_getlines
         done = True
 
     return install
