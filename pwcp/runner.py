@@ -38,6 +38,7 @@ def main(args=sys.argv[1:]):
         loader('__main__', args.file.name)
     )
     module = util.module_from_spec(spec)
+    sys.modules['__main__'] = module
     try:
         spec.loader.exec_module(module)
     except Exception as e:

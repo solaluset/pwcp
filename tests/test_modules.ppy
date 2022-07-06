@@ -3,10 +3,12 @@ import asyncio
 from asyncio import get_event_loop
 import hello
 import a_module
+
+test_value = 'd'
 print(
     asyncio,
     hello,
-    (a_module.a, a_module.b, a_module.c),
+    (a_module.a, a_module.b, a_module.c()),
     get_event_loop,
     sep='\n'
 )

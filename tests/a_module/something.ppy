@@ -1,3 +1,5 @@
 #define C c
 
-C = 'd'
+def C():
+    from __main__ import test_value
+    return test_value
