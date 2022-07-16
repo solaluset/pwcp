@@ -146,11 +146,14 @@ def _install():
 
     def install(config: dict = {}):
         nonlocal done
-        if done:
-            return
-        # setting global configuration
+
+        # (re)setting global configuration
         PPyLoader.set_config(config)
         PPyPathFinder.set_config(config)
+
+        if done:
+            return
+
         # insert the path finder
         sys.meta_path.insert(0, PPyPathFinder)
         _path_hooks.append(FileFinder.path_hook(LOADER_DETAILS))
