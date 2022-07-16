@@ -26,16 +26,17 @@ parser.add_argument('file', type=argparse.FileType('r'))
 
 
 def main(args=sys.argv[1:]):
-    sys.path.append(os.getcwd())
     args = parser.parse_args(args)
     hooks.install(vars(args))
-    if args.file.name.endswith(FILE_EXTENSION):
+    filename: str = args.file.name
+    sys.path.insert(0, os.path.dirname(os.path.abspath(filename)))
+    if filename.endswith(FILE_EXTENSION):
         loader = hooks.PPyLoader
     else:
         loader = SourceFileLoader
     spec = util.spec_from_loader(
         '__main__',
-        loader('__main__', args.file.name)
+        loader('__main__', filename)
     )
     module = util.module_from_spec(spec)
     sys.modules['__main__'] = module
