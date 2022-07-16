@@ -64,7 +64,7 @@ class PPyPathFinder(PathFinder, Configurable):
     @classmethod
     def invalidate_caches(cls):
         for finder in _path_importer_cache.values():
-            if hasattr(finder, 'invalidate_caches'):
+            if hasattr(finder, "invalidate_caches"):
                 finder.invalidate_caches()
 
     @classmethod
@@ -79,7 +79,7 @@ class PPyPathFinder(PathFinder, Configurable):
 
     @classmethod
     def _path_importer_cache(cls, path):
-        if path == '':
+        if path == "":
             try:
                 path = getcwd()
             except FileNotFoundError:
@@ -95,7 +95,7 @@ class PPyPathFinder(PathFinder, Configurable):
 
     @classmethod
     def find_spec(cls, fullname, path, target=None):
-        if cls._config.get('prefer_python'):
+        if cls._config.get("prefer_python"):
             spec = find_spec_fallback(fullname, path, target)
             if spec:
                 return spec

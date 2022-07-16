@@ -10,18 +10,18 @@ from .config import FILE_EXTENSION
 
 parser = argparse.ArgumentParser(description="Python with C preprocessor")
 parser.add_argument(
-    '--prefer-py',
-    dest='prefer_python',
-    action='store_true',
-    help='Prefer .py files over .ppy when importing.'
+    "--prefer-py",
+    dest="prefer_python",
+    action="store_true",
+    help="Prefer .py files over .ppy when importing.",
 )
 parser.add_argument(
-    '--save-files',
-    dest='save_files',
-    action='store_true',
-    help='Save .ppy files to .py after preprocessing.'
+    "--save-files",
+    dest="save_files",
+    action="store_true",
+    help="Save .ppy files to .py after preprocessing.",
 )
-parser.add_argument('file', type=argparse.FileType('r'))
+parser.add_argument("file", type=argparse.FileType("r"))
 
 
 def main(args=sys.argv[1:]):
@@ -34,14 +34,14 @@ def main(args=sys.argv[1:]):
     else:
         loader = SourceFileLoader
     spec = util.spec_from_loader(
-        '__main__',
-        loader('__main__', filename)
+        "__main__",
+        loader("__main__", filename),
     )
     module = util.module_from_spec(spec)
-    sys.modules['__main__'] = module
+    sys.modules["__main__"] = module
     sys.excepthook = hooks.create_exception_handler(module)
     spec.loader.exec_module(module)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

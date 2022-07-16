@@ -12,12 +12,12 @@ def preprocess(filename, config={}):
     p.write(out)
     out.seek(0)
     res = out.read()
-    if config.get('save_files'):
+    if config.get("save_files"):
         dir, file = path.split(filename)
         if file.endswith(FILE_EXTENSION):
-            file = file.rpartition('.')[0] + '.py'
+            file = file.rpartition(".")[0] + ".py"
         else:
-            file += '.py'
-        with open(path.join(dir, file), 'w') as f:
+            file += ".py"
+        with open(path.join(dir, file), "w") as f:
             f.write(res)
     return res
