@@ -27,8 +27,8 @@ parser.add_argument("file", type=argparse.FileType("r"))
 def main(args=sys.argv[1:]):
     args = parser.parse_args(args)
     hooks.install(vars(args))
-    filename: str = args.file.name
-    sys.path.insert(0, os.path.dirname(os.path.abspath(filename)))
+    filename: str = os.path.abspath(args.file.name)
+    sys.path.insert(0, os.path.dirname(filename))
     if filename.endswith(FILE_EXTENSION):
         loader = hooks.PPyLoader
     else:
