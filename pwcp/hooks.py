@@ -11,6 +11,9 @@ from importlib import invalidate_caches
 from importlib.abc import SourceLoader
 from importlib.util import spec_from_loader
 from importlib.machinery import FileFinder, PathFinder
+from traceback import print_exception
+from types import ModuleType, TracebackType
+from typing import Optional, Type
 from .preprocessor import preprocess
 from .config import FILE_EXTENSION
 
@@ -119,7 +122,23 @@ class PPyLoader(SourceLoader, Configurable):
         return data.encode()
 
 
-loader_details = PPyLoader, [FILE_EXTENSION]
+def create_exception_handler(module: Optional[ModuleType]):
+    def handle_exc(
+        e_type: Type[BaseException], e: BaseException, tb: Optional[TracebackType]
+    ):
+        if isinstance(e, SyntaxError) and preprocessed_files.get(e.filename):
+            # replace raw text from file with actual code
+            data = preprocessed_files[e.filename]
+            e.text = data.splitlines()[e.lineno - 1]
+        # remove outer frames from traceback
+        while tb and module and tb.tb_frame.f_code.co_filename != module.__file__:
+            tb = tb.tb_next
+        print_exception(e_type, e, tb)
+
+    return handle_exc
+
+
+LOADER_DETAILS = PPyLoader, [FILE_EXTENSION]
 
 
 def _install():
@@ -134,7 +153,7 @@ def _install():
         PPyPathFinder.set_config(config)
         # insert the path finder
         sys.meta_path.insert(0, PPyPathFinder)
-        _path_hooks.append(FileFinder.path_hook(loader_details))
+        _path_hooks.append(FileFinder.path_hook(LOADER_DETAILS))
         # clear any loaders that might already be in use by the FileFinder
         sys.path_importer_cache.clear()
         invalidate_caches()
