@@ -6,6 +6,8 @@ from subprocess import STDOUT, CalledProcessError, check_output
 
 import pytest
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from pwcp import main
 
 
@@ -39,11 +41,17 @@ def test_py_import():
 
 def test_syntax_error():
     with pytest.raises(CalledProcessError) as ctx:
-        check_output(["pwcp", "tests/syntax_error.ppy"], stderr=STDOUT)
+        check_output(
+            [sys.executable, "-m", "pwcp", "tests/syntax_error.ppy"],
+            stderr=STDOUT,
+        )
     assert ctx.value.output.splitlines()[1].strip() == b'print("hello")!'
 
 
 def test_type_error():
     with pytest.raises(CalledProcessError) as ctx:
-        check_output(["pwcp", "tests/type_error.ppy"], stderr=STDOUT)
-    assert ctx.value.output.splitlines()[-2].strip() == b"print('1' + 1)"
+        check_output(
+            [sys.executable, "-m", "pwcp", "tests/type_error.ppy"],
+            stderr=STDOUT,
+        )
+    assert ctx.value.output.splitlines()[2].strip() == b"print('1' + 1)"
