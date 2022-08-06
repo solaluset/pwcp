@@ -8,7 +8,7 @@ from . import hooks
 from .config import FILE_EXTENSION
 
 
-__version__ = "0.4b0"
+__version__ = "0.4b1"
 
 parser = argparse.ArgumentParser(
     "python -m " + __package__
