@@ -8,7 +8,12 @@ from . import hooks
 from .config import FILE_EXTENSION
 
 
-parser = argparse.ArgumentParser(description="Python with C preprocessor")
+parser = argparse.ArgumentParser(
+    "python -m " + __package__
+    if sys.argv[0] == "-m"
+    else os.path.basename(sys.argv[0]),
+    description="Python with C preprocessor",
+)
 parser.add_argument(
     "--prefer-py",
     dest="prefer_python",
