@@ -1,9 +1,11 @@
 from setuptools import setup
 
+from pwcp import __version__
+
 
 setup(
     name="pwcp",
-    version="0.4b0",
+    version=__version__,
     packages=["pwcp"],
     install_requires=["pcpp@git+https://github.com/Krutyi-4el/pcpp.git"],
     entry_points={

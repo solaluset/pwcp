@@ -1,1 +1,1 @@
-from .runner import main
+from .runner import main, __version__

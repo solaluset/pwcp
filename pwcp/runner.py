@@ -8,12 +8,15 @@ from . import hooks
 from .config import FILE_EXTENSION
 
 
+__version__ = "0.4b0"
+
 parser = argparse.ArgumentParser(
     "python -m " + __package__
     if sys.argv[0] == "-m"
     else os.path.basename(sys.argv[0]),
     description="Python with C preprocessor",
 )
+parser.add_argument("--version", action="version", version="pwcp " + __version__)
 parser.add_argument(
     "--prefer-py",
     dest="prefer_python",
