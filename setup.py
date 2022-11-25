@@ -1,5 +1,8 @@
+import os
+
 from setuptools import setup
 
+os.environ["PWCP_IS_INSTALLING"] = "1"
 from pwcp import __version__
 
 

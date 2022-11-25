@@ -4,11 +4,16 @@ import sys
 from importlib import util
 from importlib.machinery import SourceFileLoader
 
-from . import hooks
+try:
+    from . import hooks
+except ImportError:
+    # ignore error when we only need version
+    if not os.getenv("PWCP_IS_INSTALLING"):
+        raise
 from .config import FILE_EXTENSION
 
 
-__version__ = "0.4b1"
+__version__ = "0.4b2"
 
 parser = argparse.ArgumentParser(
     "python -m " + __package__
