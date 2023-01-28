@@ -4,8 +4,14 @@ from os import path
 from .config import FILE_EXTENSION
 
 
+class PyPreprocessor(Preprocessor):
+    def on_comment(self, tok):
+        # ignore comments as // is python operation
+        return True
+
+
 def preprocess(filename, config={}):
-    p = Preprocessor(fix_indentation=True)
+    p = PyPreprocessor(fix_indentation=True)
     with open(filename) as f:
         p.parse(f)
     out = StringIO()

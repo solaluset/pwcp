@@ -23,6 +23,10 @@ def test_ppy_file():
         assert sys.stdout.getvalue() == "Hello world!\n"
 
 
+def test_comment_preservation():
+    main(["tests/not_a_comment.ppy"])
+
+
 def test_imports():
     main(["tests/test_modules.ppy"])
     assert sys.modules["hello"].__file__ == os.path.join(
