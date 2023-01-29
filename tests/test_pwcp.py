@@ -23,8 +23,8 @@ def test_ppy_file():
         assert sys.stdout.getvalue() == "Hello world!\n"
 
 
-def test_comment_preservation():
-    main(["tests/not_a_comment.ppy"])
+def test_comments():
+    main(["tests/comments.ppy"])
 
 
 def test_imports():

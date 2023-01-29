@@ -6,8 +6,10 @@ from .config import FILE_EXTENSION
 
 class PyPreprocessor(Preprocessor):
     def on_comment(self, tok):
-        # ignore comments as // is python operation
-        return True
+        # ignore this type of comments as // is python operation
+        if tok.type == self.t_COMMENT2:
+            return True
+        return False
 
 
 def preprocess(filename, config={}):
