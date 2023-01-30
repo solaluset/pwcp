@@ -1,4 +1,4 @@
-# previously there were issues with asyncio and some other modules
+/* previously there were issues with asyncio and some other modules */
 import asyncio
 from asyncio import get_event_loop
 import hello
