@@ -1,2 +1,2 @@
-git+https://github.com/Krutyi-4el/pcpp.git
+git+https://github.com/Krutyi-4el/pypp.git
 pytest

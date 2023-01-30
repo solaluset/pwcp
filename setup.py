@@ -10,7 +10,7 @@ setup(
     name="pwcp",
     version=__version__,
     packages=["pwcp"],
-    install_requires=["pcpp@git+https://github.com/Krutyi-4el/pcpp.git"],
+    install_requires=["pypp@git+https://github.com/Krutyi-4el/pypp.git"],
     entry_points={
         "console_scripts": ["pwcp=pwcp:main"],
     },

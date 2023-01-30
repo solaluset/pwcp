@@ -1,19 +1,11 @@
-from pcpp import Preprocessor
+from pypp import Preprocessor
 from io import StringIO
 from os import path
 from .config import FILE_EXTENSION
 
 
-class PyPreprocessor(Preprocessor):
-    def on_comment(self, tok):
-        # ignore this type of comments as // is python operation
-        if tok.type == self.t_COMMENT2:
-            return True
-        return False
-
-
 def preprocess(filename, config={}):
-    p = PyPreprocessor(fix_indentation=True)
+    p = Preprocessor()
     with open(filename) as f:
         p.parse(f)
     out = StringIO()
