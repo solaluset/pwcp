@@ -3,6 +3,7 @@
 # https://stackoverflow.com/a/45168493/
 # https://stackoverflow.com/a/48671982/
 
+import os
 import sys
 from os import getcwd
 import linecache
@@ -10,7 +11,7 @@ from linecache import getlines
 from importlib import invalidate_caches
 from importlib.abc import SourceLoader
 from importlib.util import spec_from_loader
-from importlib.machinery import FileFinder, PathFinder
+from importlib.machinery import SOURCE_SUFFIXES, FileFinder, PathFinder, all_suffixes
 from traceback import print_exception
 from types import ModuleType, TracebackType
 from typing import Optional, Type
@@ -138,6 +139,21 @@ def create_exception_handler(module: Optional[ModuleType]):
     return handle_exc
 
 
+def is_package(module_name: str) -> bool:
+    if not module_name:
+        return False
+    module_name = module_name.replace(".", os.sep)
+    path_list = [os.path.join(path, module_name) for path in sys.path]
+    for path in path_list:
+        for suffix in all_suffixes():
+            if os.path.isfile(path + suffix):
+                return False
+    for path in path_list:
+        if os.path.isdir(path):
+            return True
+    return False
+
+
 LOADER_DETAILS = PPyLoader, [FILE_EXTENSION]
 
 
@@ -157,6 +173,8 @@ def _install():
         # insert the path finder
         sys.meta_path.insert(0, PPyPathFinder)
         _path_hooks.append(FileFinder.path_hook(LOADER_DETAILS))
+        # register our extension
+        SOURCE_SUFFIXES.append(FILE_EXTENSION)
         # clear any loaders that might already be in use by the FileFinder
         sys.path_importer_cache.clear()
         invalidate_caches()

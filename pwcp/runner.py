@@ -34,23 +34,36 @@ parser.add_argument(
     action="store_true",
     help="Save .ppy files to .py after preprocessing.",
 )
-parser.add_argument("file", type=argparse.FileType("r"))
+parser.add_argument("-m", action="store_true", help="Run target as module")
+parser.add_argument("target")
+parser.add_argument("args", nargs=argparse.ZERO_OR_MORE)
 
 
 def main(args=sys.argv[1:]):
     args = parser.parse_args(args)
     hooks.install(vars(args))
-    filename: str = os.path.abspath(args.file.name)
-    sys.path.insert(0, os.path.dirname(filename))
-    if filename.endswith(FILE_EXTENSION):
-        loader = hooks.PPyLoader
+    if not args.m:
+        filename: str = os.path.abspath(args.target)
+        sys.path.insert(0, os.path.dirname(filename))
+        if filename.endswith(FILE_EXTENSION):
+            loader = hooks.PPyLoader
+        else:
+            loader = SourceFileLoader
+        spec = util.spec_from_loader(
+            "__main__",
+            loader("__main__", filename),
+        )
     else:
-        loader = SourceFileLoader
-    spec = util.spec_from_loader(
-        "__main__",
-        loader("__main__", filename),
-    )
+        sys.path.insert(0, os.getcwd())
+        if hooks.is_package(args.target):
+            args.target += ".__main__"
+        spec = util.find_spec(args.target)
+        if spec is None:
+            print("No module named " + args.target)
+            return
+        spec.loader.name = "__main__"
     module = util.module_from_spec(spec)
+    module.__name__ = "__main__"
     sys.modules["__main__"] = module
     sys.excepthook = hooks.create_exception_handler(module)
     spec.loader.exec_module(module)
