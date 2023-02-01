@@ -9,6 +9,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from pwcp import main
+from pwcp.hooks import is_package
 
 
 def test_regular_file():
@@ -21,6 +22,12 @@ def test_ppy_file():
     with patch("sys.stdout", new=StringIO()):
         main(["tests/hello.ppy"])
         assert sys.stdout.getvalue() == "Hello world!\n"
+
+
+def test_run_module():
+    with patch("sys.stdout", new=StringIO()):
+        main(["-m", "tests.a_module", "1", "2", "3"])
+        assert sys.stdout.getvalue() == "b = 6\n"
 
 
 def test_comments():
@@ -59,3 +66,10 @@ def test_type_error():
             stderr=STDOUT,
         )
     assert ctx.value.output.splitlines()[2].strip() == b"print('1' + 1)"
+
+
+def test_is_package():
+    assert is_package("tests") is True
+    assert is_package("tests.test_modules") is False
+    with pytest.warns(match="Module file or directory not found"):
+        assert is_package("inexistent") is False

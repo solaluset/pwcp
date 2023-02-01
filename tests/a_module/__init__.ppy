@@ -3,3 +3,7 @@
 from .regular_py import b, c
 
 a = B
+
+
+if __name__ == "__main__":
+    raise RuntimeError("__init__ was ran as __main__")

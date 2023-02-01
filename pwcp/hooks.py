@@ -5,6 +5,7 @@
 
 import os
 import sys
+import warnings
 from os import getcwd
 import linecache
 from linecache import getlines
@@ -151,6 +152,7 @@ def is_package(module_name: str) -> bool:
     for path in path_list:
         if os.path.isdir(path):
             return True
+    warnings.warn("Module file or directory not found, assuming code module.")
     return False
 
 
