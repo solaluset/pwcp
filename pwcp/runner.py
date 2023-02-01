@@ -13,7 +13,7 @@ except ImportError:
 from .config import FILE_EXTENSION
 
 
-__version__ = "0.4b2"
+__version__ = "0.5b0"
 
 parser = argparse.ArgumentParser(
     "python -m " + __package__
