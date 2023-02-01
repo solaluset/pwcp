@@ -66,6 +66,7 @@ def main(args=sys.argv[1:]):
     module.__name__ = "__main__"
     sys.modules["__main__"] = module
     sys.excepthook = hooks.create_exception_handler(module)
+    orig_argv = sys.argv.copy()
     sys.argv.clear()
     sys.argv.append(module.__file__)
     sys.argv.extend(args.args)
@@ -73,7 +74,7 @@ def main(args=sys.argv[1:]):
     spec.loader.exec_module(module)
 
     sys.argv.clear()
-    sys.argv.extend(sys.orig_argv)
+    sys.argv.extend(orig_argv)
 
 
 if __name__ == "__main__":
