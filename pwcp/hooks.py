@@ -5,10 +5,15 @@
 
 import os
 import sys
+import codeop
 import warnings
-from os import getcwd
+import builtins
+import functools
 import linecache
+from os import getcwd
+from builtins import compile
 from linecache import getlines
+from codeop import Compile, _maybe_compile
 from importlib import invalidate_caches
 from importlib.abc import SourceLoader
 from importlib.util import spec_from_loader
@@ -16,7 +21,7 @@ from importlib.machinery import SOURCE_SUFFIXES, FileFinder, PathFinder, all_suf
 from traceback import print_exception
 from types import ModuleType, TracebackType
 from typing import Optional, Type
-from .preprocessor import preprocess
+from .preprocessor import PyPreprocessor, preprocess_file, maybe_preprocess
 from .config import FILE_EXTENSION
 
 
@@ -26,10 +31,49 @@ _path_hooks = []
 preprocessed_files = {}
 
 
+@functools.wraps(getlines)
 def patched_getlines(filename, module_globals=None):
     if filename in preprocessed_files:
         return preprocessed_files[filename].splitlines()
     return getlines(filename, module_globals)
+
+
+@functools.wraps(compile)
+def patched_compile(src, *args, **kwargs):
+    src = maybe_preprocess(src)
+    return compile(src, *args, **kwargs)
+
+
+@functools.wraps(_maybe_compile)
+def patched_maybe_compile(compiler, src, *args):
+    try:
+        src = maybe_preprocess(src, getattr(compiler, "preprocessor", None))
+    except SyntaxError as e:
+        msg, eargs = e.args
+        if msg.startswith("Unterminated"):
+            return None
+        eargs = list(eargs)
+        eargs[3] = src.splitlines()[e.lineno - 1]
+        e.args = (msg, tuple(eargs))
+        raise
+    return _maybe_compile(compiler, src, *args)
+
+
+class patched_Compile(Compile):
+    def __init__(self):
+        super().__init__()
+        self.preprocessor = PyPreprocessor()
+
+    def __call__(self, source, filename, symbol):
+        source = maybe_preprocess(source, self.preprocessor)
+        return super().__call__(source, filename, symbol)
+
+
+def apply_monkeypatch():
+    linecache.getlines = patched_getlines
+    builtins.compile = patched_compile
+    codeop._maybe_compile = patched_maybe_compile
+    codeop.Compile = patched_Compile
 
 
 def find_spec_fallback(fullname, path, target):
@@ -120,7 +164,7 @@ class PPyLoader(SourceLoader, Configurable):
         """exec_module is already defined for us, we just have to provide a way
         of getting the source code of the module"""
         # save preprocessed file to display actual SyntaxError
-        data = preprocessed_files[self.path] = preprocess(self.path, self._config)
+        data = preprocessed_files[self.path] = preprocess_file(self.path, self._config)
         return data.encode()
 
 
@@ -180,8 +224,9 @@ def _install():
         # clear any loaders that might already be in use by the FileFinder
         sys.path_importer_cache.clear()
         invalidate_caches()
-        # patch getlines
-        linecache.getlines = patched_getlines
+        # patch standard library
+        apply_monkeypatch()
+
         done = True
 
     return install

@@ -7,6 +7,12 @@ Python with C preprocessor
 ## Running
 `pwcp <file>`
 
+`pwcp -m <module>`
+
+Or run built-in `code` module to start interactive console:
+
+`pwcp -m code`
+
 ## Why?
 For fun!
 

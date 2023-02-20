@@ -68,6 +68,45 @@ def test_type_error():
     assert ctx.value.output.splitlines()[2].strip() == b"print('1' + 1)"
 
 
+def test_interactive():
+    s = "\nand this is a triple-quoted string\n"
+    code = f"""
+#define x 1
+/* this
+is
+a comment */
+'''{s}'''
+def f():
+    '''check whether we can declare
+    a function with several lines'''
+#if x
+    print(x)
+#endif
+
+f()
+    """.strip()
+    with patch("sys.stdin", new=StringIO(code)), patch("sys.stdout", new=StringIO()):
+        main(["-m", "code"])
+        assert (
+            sys.stdout.getvalue()
+            == sys.ps1 * 2
+            + sys.ps2 * 2
+            + sys.ps1
+            + sys.ps2 * 2
+            + repr(s)
+            + "\n"
+            + sys.ps1
+            + sys.ps2 * 6
+            + sys.ps1
+            + "1\n"
+            + sys.ps1
+        )
+
+
+def test_overriden_compile():
+    main(["tests/compile.py"])
+
+
 def test_is_package():
     assert is_package("tests") is True
     assert is_package("tests.test_modules") is False
