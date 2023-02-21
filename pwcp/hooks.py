@@ -56,7 +56,12 @@ def patched_maybe_compile(compiler, src, filename, symbol):
         eargs[3] = src.splitlines()[e.lineno - 1]
         e.args = (msg, tuple(eargs))
         raise
-    return _maybe_compile(compiler, src, filename, symbol)
+    try:
+        return _maybe_compile(compiler, src, filename, symbol)
+    except SyntaxError as e:
+        if e.msg == "unexpected EOF while parsing":
+            return None
+        raise
 
 
 class patched_Compile(Compile):
