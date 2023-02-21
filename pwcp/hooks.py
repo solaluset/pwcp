@@ -59,7 +59,9 @@ def patched_maybe_compile(compiler, src, filename, symbol):
     try:
         return _maybe_compile(compiler, src, filename, symbol)
     except SyntaxError as e:
-        if e.msg in ("unexpected EOF while parsing", "expected an indented block"):
+        if e.msg.startswith(
+            ("unexpected EOF while parsing", "expected an indented block")
+        ):
             return None
         raise
 
