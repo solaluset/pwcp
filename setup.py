@@ -1,17 +1,25 @@
-import os
+import sys
 
+import setuptools
+import ppsetuptools
 from setuptools import setup
 
-os.environ["PWCP_IS_INSTALLING"] = "1"
-from pwcp import __version__
+sys.path.append("pwcp")
+from version import __version__
+
+del sys.path[-1]
 
 
-setup(
-    name="pwcp",
+def patched_setup(*args, **kwargs):
+    scripts = kwargs.pop("scripts")
+    kwargs["entry_points"] = {
+        "console_scripts": [f"{k}={v}" for k, v in scripts.items()]
+    }
+    setup(*args, **{k: v for k, v in kwargs.items() if v is not None})
+
+
+setuptools.setup = patched_setup
+ppsetuptools.setup(
     version=__version__,
     packages=["pwcp"],
-    install_requires=["pypp@git+https://github.com/Krutyi-4el/pypp.git"],
-    entry_points={
-        "console_scripts": ["pwcp=pwcp:main"],
-    },
 )

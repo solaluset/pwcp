@@ -1,0 +1,16 @@
+[build-system]
+requires = ["ppsetuptools", "wheel"]
+
+[project]
+name = "pwcp"
+description = "Python with C preprocessor"
+dependencies = ["pypp@git+https://github.com/Krutyi-4el/pypp.git@e6158e7d23b1bdc97a34b9b92a51d52561c1d77d"]
+optional-dependencies = {tests = ["pytest"]}
+dynamic = ["version"]
+scripts = {pwcp = "pwcp:main"}
+
+[tool.setuptools]
+packages = ["pwcp"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pwcp.version.__version__"}
