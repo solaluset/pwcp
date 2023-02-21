@@ -2,6 +2,9 @@ import ast
 
 
 code = """
+/* force preprocessing */
+#pragma pypp on
+
 #define x 1
 
 def f():

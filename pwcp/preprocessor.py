@@ -35,10 +35,13 @@ def preprocess_file(filename, config={}):
     return res
 
 
-def maybe_preprocess(src, preprocessor=None):
+def maybe_preprocess(src, filename, preprocessor=None):
     if isinstance(src, bytes):
         src = src.decode()
     if isinstance(src, str):
+        # disable preprocessing of non-ppy files by default
+        if preprocessor is None and not filename.endswith(FILE_EXTENSION):
+            preprocessor = PyPreprocessor(disabled=True)
         # this is essential for interactive mode
         has_newline = src.endswith("\n")
         src = preprocess(src, preprocessor)

@@ -39,15 +39,15 @@ def patched_getlines(filename, module_globals=None):
 
 
 @functools.wraps(compile)
-def patched_compile(src, *args, **kwargs):
-    src = maybe_preprocess(src)
-    return compile(src, *args, **kwargs)
+def patched_compile(src, filename, *args, **kwargs):
+    src = maybe_preprocess(src, filename)
+    return compile(src, filename, *args, **kwargs)
 
 
 @functools.wraps(_maybe_compile)
-def patched_maybe_compile(compiler, src, *args):
+def patched_maybe_compile(compiler, src, filename, symbol):
     try:
-        src = maybe_preprocess(src, getattr(compiler, "preprocessor", None))
+        src = maybe_preprocess(src, filename, getattr(compiler, "preprocessor", None))
     except SyntaxError as e:
         msg, eargs = e.args
         if msg.startswith("Unterminated"):
@@ -56,7 +56,7 @@ def patched_maybe_compile(compiler, src, *args):
         eargs[3] = src.splitlines()[e.lineno - 1]
         e.args = (msg, tuple(eargs))
         raise
-    return _maybe_compile(compiler, src, *args)
+    return _maybe_compile(compiler, src, filename, symbol)
 
 
 class patched_Compile(Compile):
@@ -65,7 +65,7 @@ class patched_Compile(Compile):
         self.preprocessor = PyPreprocessor()
 
     def __call__(self, source, filename, symbol):
-        source = maybe_preprocess(source, self.preprocessor)
+        source = maybe_preprocess(source, filename, self.preprocessor)
         return super().__call__(source, filename, symbol)
 
 
