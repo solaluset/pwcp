@@ -3,3 +3,5 @@
 #define GIVE "Hello "
 #define YOU "world!"
 #define UP )
+#define LET repr(__package__) + " "
+#define DOWN UP

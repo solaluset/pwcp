@@ -21,13 +21,13 @@ def test_regular_file():
 def test_ppy_file():
     with patch("sys.stdout", new=StringIO()):
         main(["tests/hello.ppy"])
-        assert sys.stdout.getvalue() == "Hello world!\n"
+        assert sys.stdout.getvalue() == "Hello world!\nNone world!\n"
 
 
 def test_run_module():
     with patch("sys.stdout", new=StringIO()):
         main(["-m", "tests.a_module", "1", "2", "3"])
-        assert sys.stdout.getvalue() == "b = 6\n"
+        assert sys.stdout.getvalue() == "tests.a_module.b = 6\n"
 
 
 def test_comments():

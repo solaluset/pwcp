@@ -9,4 +9,4 @@ parser.add_argument("numbers", type=int, nargs=argparse.ONE_OR_MORE)
 
 if __name__ == "__main__":
     numbers = parser.parse_args().numbers
-    print(a, "=", sum(numbers))
+    print(__package__ + "." + a, "=", sum(numbers))

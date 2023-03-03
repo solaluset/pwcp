@@ -47,6 +47,7 @@ def main(args=sys.argv[1:]):
             "__main__",
             loader("__main__", filename),
         )
+        vars_override = {"__package__": None}
     else:
         sys.path.insert(0, os.getcwd())
         if hooks.is_package(args.target):
@@ -56,8 +57,9 @@ def main(args=sys.argv[1:]):
             print("No module named " + args.target)
             return
         spec.loader.name = "__main__"
+        vars_override = {"__name__": "__main__"}
     module = util.module_from_spec(spec)
-    module.__name__ = "__main__"
+    vars(module).update(vars_override)
     sys.modules["__main__"] = module
     sys.excepthook = hooks.create_exception_handler(module)
     orig_argv = sys.argv.copy()
