@@ -102,6 +102,16 @@ f()
             + sys.ps1
         )
 
+    code = """
+#ifndef X
+#define X
+print(1)
+#endif
+    """.strip()
+    with patch("sys.stdin", new=StringIO(code)), patch("sys.stdout", new=StringIO()):
+        main(["-m", "code"])
+        assert sys.stdout.getvalue() == sys.ps1 + sys.ps2 * 3 + "1\n" + sys.ps1
+
 
 def test_overriden_compile():
     main(["tests/compile.py"])

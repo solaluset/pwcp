@@ -8,6 +8,14 @@ from .config import FILE_EXTENSION
 
 
 class PyPreprocessor(Preprocessor):
+    def write(self, file):
+        macros_backup = self.macros.copy()
+        try:
+            super().write(file)
+        except Exception:
+            self.macros = macros_backup
+            raise
+
     def on_error(self, file, line, msg):
         raise SyntaxError(msg, (file, line, 1, getline(file, line)))
 
