@@ -2,7 +2,7 @@
 Python with C preprocessor
 
 ## Installation
-`pip install git+https://github.com/Krutyi-4el/pwcp`
+`pip install git+https://github.com/solaluset/pwcp`
 
 ## Running
 `pwcp <file>`
