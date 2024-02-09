@@ -66,14 +66,15 @@ def patched_maybe_compile(compiler, src, filename, symbol):
         raise
 
 
+@functools.wraps(Compile, updated=())
 class patched_Compile(Compile):
     def __init__(self):
         super().__init__()
         self.preprocessor = PyPreprocessor()
 
-    def __call__(self, source, filename, symbol):
+    def __call__(self, source, filename, symbol, **kwargs):
         source = maybe_preprocess(source, filename, self.preprocessor)
-        return super().__call__(source, filename, symbol)
+        return super().__call__(source, filename, symbol, **kwargs)
 
 
 def apply_monkeypatch():
