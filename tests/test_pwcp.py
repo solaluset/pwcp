@@ -68,6 +68,15 @@ def test_type_error():
     assert ctx.value.output.splitlines()[2].strip() == b"print('1' + 1)"
 
 
+def test_error_directive():
+    with pytest.raises(CalledProcessError) as ctx:
+        check_output(
+            [sys.executable, "-m", "pwcp", "tests/error_directive.ppy"],
+            stderr=STDOUT,
+        )
+    assert ctx.value.output.splitlines()[1].strip() == b"pwcp.preprocessor.PreprocessorError: exit code is not zero"
+
+
 def test_interactive():
     s = "\nand this is a triple-quoted string\n"
     code = f"""

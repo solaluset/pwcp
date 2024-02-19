@@ -20,12 +20,18 @@ class PyPreprocessor(Preprocessor):
         raise SyntaxError(msg, (file, line, 1, getline(file, line)))
 
 
+class PreprocessorError(Exception):
+    pass
+
+
 def preprocess(src, p=None):
     if p is None:
         p = PyPreprocessor()
     p.parse(src)
     out = StringIO()
     p.write(out)
+    if p.return_code != 0:
+        raise PreprocessorError("exit code is not zero")
     return out.getvalue()
 
 
