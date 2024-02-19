@@ -1,0 +1,2 @@
+#error "This is an error"
+print("hi")
