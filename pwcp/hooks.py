@@ -22,7 +22,7 @@ from traceback import print_exception
 from types import ModuleType, TracebackType
 from typing import Optional, Type
 from .preprocessor import PyPreprocessor, preprocess_file, maybe_preprocess
-from .config import FILE_EXTENSION
+from .config import FILE_EXTENSIONS
 
 
 _path_importer_cache = {}
@@ -208,7 +208,7 @@ def is_package(module_name: str) -> bool:
     return False
 
 
-LOADER_DETAILS = PPyLoader, [FILE_EXTENSION]
+LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS
 
 
 def _install():
@@ -228,7 +228,7 @@ def _install():
         sys.meta_path.insert(0, PPyPathFinder)
         _path_hooks.append(FileFinder.path_hook(LOADER_DETAILS))
         # register our extension
-        SOURCE_SUFFIXES.append(FILE_EXTENSION)
+        SOURCE_SUFFIXES.extend(FILE_EXTENSIONS)
         # clear any loaders that might already be in use by the FileFinder
         sys.path_importer_cache.clear()
         invalidate_caches()

@@ -1,1 +1,1 @@
-FILE_EXTENSION = ".ppy"
+FILE_EXTENSIONS = [".ppy"]

@@ -4,7 +4,7 @@ from linecache import getline
 
 from pypp import Preprocessor
 
-from .config import FILE_EXTENSION
+from .config import FILE_EXTENSIONS
 
 
 class PyPreprocessor(Preprocessor):
@@ -40,7 +40,7 @@ def preprocess_file(filename, config={}):
         res = preprocess(f)
     if config.get("save_files"):
         dir, file = path.split(filename)
-        if file.endswith(FILE_EXTENSION):
+        if file.endswith(tuple(FILE_EXTENSIONS)):
             file = file.rpartition(".")[0] + ".py"
         else:
             file += ".py"
@@ -54,7 +54,7 @@ def maybe_preprocess(src, filename, preprocessor=None):
         src = src.decode()
     if isinstance(src, str):
         # disable preprocessing of non-ppy files by default
-        if preprocessor is None and not filename.endswith(FILE_EXTENSION):
+        if preprocessor is None and not filename.endswith(FILE_EXTENSIONS[0]):
             preprocessor = PyPreprocessor(disabled=True)
         # this is essential for interactive mode
         has_newline = src.endswith("\n")

@@ -5,7 +5,7 @@ from importlib import util
 from importlib.machinery import SourceFileLoader
 
 from . import hooks
-from .config import FILE_EXTENSION
+from .config import FILE_EXTENSIONS
 from .version import __version__
 
 
@@ -39,7 +39,7 @@ def main(args=sys.argv[1:]):
     if not args.m:
         filename: str = os.path.abspath(args.target)
         sys.path.insert(0, os.path.dirname(filename))
-        if filename.endswith(FILE_EXTENSION):
+        if filename.endswith(tuple(FILE_EXTENSIONS)):
             loader = hooks.PPyLoader
         else:
             loader = SourceFileLoader
