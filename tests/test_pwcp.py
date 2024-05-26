@@ -74,7 +74,7 @@ def test_error_directive():
             [sys.executable, "-m", "pwcp", "tests/error_directive.ppy"],
             stderr=STDOUT,
         )
-    assert ctx.value.output.splitlines()[1].strip() == b"pwcp.preprocessor.PreprocessorError: exit code is not zero"
+    assert ctx.value.output.splitlines()[1].strip() == b"pwcp.preprocessor.PreprocessorError: preprocessor exit code is not zero"
 
 
 def test_interactive():
