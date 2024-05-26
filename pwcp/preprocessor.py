@@ -29,9 +29,15 @@ def preprocess(src, p=None):
         p = PyPreprocessor()
     p.parse(src)
     out = StringIO()
-    p.write(out)
+    try:
+        p.write(out)
+    except SyntaxError:
+        raise
+    except Exception as e:
+        last = p.lastdirective
+        raise PreprocessorError(f"internal preprocessor error at around {last.source}:{last.lineno}") from e
     if p.return_code != 0:
-        raise PreprocessorError("exit code is not zero")
+        raise PreprocessorError("preprocessor exit code is not zero")
     return out.getvalue()
 
 
