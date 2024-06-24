@@ -77,7 +77,13 @@ class patched_Compile(Compile):
 
 
 def _get_max_mtime(files: list) -> int:
-    return max(int(os.stat(file).st_mtime) for file in files)
+    mtimes = [0]
+    for file in files:
+        try:
+            mtimes.append(int(os.stat(file).st_mtime))
+        except FileNotFoundError:
+            pass
+    return max(mtimes)
 
 
 @functools.wraps(_code_to_timestamp_pyc)
@@ -135,7 +141,11 @@ def patched_validate_hash_pyc(data, source_hash, name, exc_details):
     _validate_hash_pyc(data, source_hash, name, exc_details)
     hashes = marshal.load(data_f)
     for file, hash_ in hashes.items():
-        if hash_ != _get_file_hash(file):
+        try:
+            current_hash = _get_file_hash(file)
+        except FileNotFoundError:
+            continue
+        if hash_ != current_hash:
             raise ImportError(
                 f"hash in bytecode doesn't match hash of source {name!r}",
                 **exc_details,
