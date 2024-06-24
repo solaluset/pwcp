@@ -4,6 +4,7 @@ requires = ["ppsetuptools", "wheel"]
 [project]
 name = "pwcp"
 description = "Python with C preprocessor"
+requires-python = ">= 3.7"
 dependencies = ["pypp@git+https://github.com/solaluset/pypp.git@856c27ffbecca5079de87d7f7f2418012dcb11ea"]
 optional-dependencies = {tests = ["pytest"]}
 dynamic = ["version"]
