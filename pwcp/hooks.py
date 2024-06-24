@@ -162,10 +162,14 @@ def create_exception_handler(module: Optional[ModuleType]):
             data = preprocessed_files[e.filename]
             e.text = data.splitlines()[e.lineno - 1]
         # remove outer frames from traceback
+        orig_tb = tb
         while (
             tb and module and tb.tb_frame.f_code.co_filename != module.__file__
         ):
             tb = tb.tb_next
+        if not tb:
+            tb = orig_tb
+            print("Internal error:", file=sys.stderr)
         print_exception(e_type, e, tb)
 
     return handle_exc
