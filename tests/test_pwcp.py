@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from io import StringIO
 from unittest.mock import patch
 from subprocess import STDOUT, CalledProcessError, check_output
@@ -10,6 +11,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from pwcp import main
 from pwcp.hooks import is_package
+
+
+sys.dont_write_bytecode = True
 
 
 def test_regular_file():
@@ -124,6 +128,39 @@ print(1)
 
 def test_overriden_compile():
     main(["tests/compile.py"])
+
+
+def test_bytecode_caching():
+    sys.dont_write_bytecode = False
+    try:
+        hello1 = "Hello, this file was cached at "
+        hello2 = "Just hello."
+
+        with open("tests/bytecode_test.pyh", "w") as f:
+            f.write(f"#define HELLO {hello1!r} __TIME__")
+
+        time_str = time.strftime("%H:%M:%S")
+        hello1_full = hello1 + time_str + "\n"
+        hello2_full = hello2 + "\n"
+
+        with patch("sys.stdout", new=StringIO()):
+            main(["tests/bytecode_test.ppy"])
+            assert sys.stdout.getvalue() == hello1_full
+
+        time.sleep(1.1)
+
+        with patch("sys.stdout", new=StringIO()):
+            main(["tests/bytecode_test.ppy"])
+            assert sys.stdout.getvalue() == hello1_full
+
+        with open("tests/bytecode_test.pyh", "w") as f:
+            f.write(f"#define HELLO {hello2!r}")
+
+        with patch("sys.stdout", new=StringIO()):
+            main(["tests/bytecode_test.ppy"])
+            assert sys.stdout.getvalue() == hello2_full
+    finally:
+        sys.dont_write_bytecode = True
 
 
 def test_is_package():

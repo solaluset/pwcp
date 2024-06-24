@@ -5,19 +5,23 @@
 
 import os
 import sys
+import _imp
 import codeop
+import marshal
 import warnings
 import builtins
 import functools
 import linecache
 from os import getcwd
+from io import BytesIO
 from builtins import compile
 from linecache import getlines
 from codeop import Compile, _maybe_compile
 from importlib import invalidate_caches
-from importlib.abc import SourceLoader
+from importlib import _bootstrap_external
 from importlib.util import spec_from_loader
-from importlib.machinery import SOURCE_SUFFIXES, FileFinder, PathFinder, all_suffixes
+from importlib.machinery import BYTECODE_SUFFIXES, SOURCE_SUFFIXES, FileFinder, PathFinder, SourceFileLoader, all_suffixes
+from importlib._bootstrap_external import _code_to_timestamp_pyc, _validate_timestamp_pyc, _code_to_hash_pyc, _validate_hash_pyc
 from traceback import print_exception
 from types import ModuleType, TracebackType
 from typing import Optional, Type
@@ -29,6 +33,10 @@ _path_importer_cache = {}
 _path_hooks = []
 
 preprocessed_files = {}
+dependencies = {}
+
+BYTECODE_HEADER_LENGTH = 16
+BYTECODE_SIZE_LENGTH = 4
 
 
 @functools.wraps(getlines)
@@ -77,11 +85,73 @@ class patched_Compile(Compile):
         return super().__call__(source, filename, symbol, **kwargs)
 
 
+def _get_max_mtime(files: list) -> int:
+    return max(int(os.stat(file).st_mtime) for file in files)
+
+
+@functools.wraps(_code_to_timestamp_pyc)
+def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
+    data = _code_to_timestamp_pyc(code, mtime, source_size)
+    deps = dependencies.get(code, None)
+    if deps:
+        max_mtime = _get_max_mtime(deps)
+        data.extend(max_mtime.to_bytes(BYTECODE_SIZE_LENGTH, "little", signed=False))
+        data.extend(marshal.dumps(deps))
+    return data
+
+
+@functools.wraps(_validate_timestamp_pyc)
+def patched_validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details):
+    _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
+    data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
+    code = marshal.load(data_f)
+    if code.co_filename.endswith(tuple(FILE_EXTENSIONS)):
+        pyc_mtime = int.from_bytes(data_f.read(BYTECODE_SIZE_LENGTH), "little", signed=False)
+        max_mtime = _get_max_mtime(marshal.load(data_f))
+        if max_mtime > pyc_mtime:
+            raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
+
+
+def _get_file_hash(file):
+    with open(file, "rb") as f:
+        return _imp.source_hash(_bootstrap_external._RAW_MAGIC_NUMBER, f.read())
+
+
+@functools.wraps(_code_to_hash_pyc)
+def patched_code_to_hash_pyc(code, source_hash, checked=True):
+    source_hash = _get_file_hash(code.co_filename)
+    data = _code_to_hash_pyc(code, source_hash, checked)
+    deps = dependencies.get(code, None)
+    if deps:
+        hashes = {file: _get_file_hash(file) for file in deps}
+        data.extend(marshal.dumps(hashes))
+    return data
+
+
+@functools.wraps(_validate_hash_pyc)
+def patched_validate_hash_pyc(data, source_hash, name, exc_details):
+    data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
+    code = marshal.load(data_f)
+    source_hash = _get_file_hash(code.co_filename)
+    _validate_hash_pyc(data, source_hash, name, exc_details)
+    hashes = marshal.load(data_f)
+    for file, hash_ in hashes.items():
+        if hash_ != _get_file_hash(file):
+            raise ImportError(
+                f"hash in bytecode doesn't match hash of source {name!r}",
+                **exc_details,
+            )
+
+
 def apply_monkeypatch():
     linecache.getlines = patched_getlines
     builtins.compile = patched_compile
     codeop._maybe_compile = patched_maybe_compile
     codeop.Compile = patched_Compile
+    _bootstrap_external._code_to_timestamp_pyc = patched_code_to_timestamp_pyc
+    _bootstrap_external._validate_timestamp_pyc = patched_validate_timestamp_pyc
+    _bootstrap_external._code_to_hash_pyc = patched_code_to_hash_pyc
+    _bootstrap_external._validate_hash_pyc = patched_validate_hash_pyc
 
 
 def find_spec_fallback(fullname, path, target):
@@ -160,7 +230,7 @@ class PPyPathFinder(PathFinder, Configurable):
         return None
 
 
-class PPyLoader(SourceLoader, Configurable):
+class PPyLoader(SourceFileLoader, Configurable):
     def __init__(self, fullname, path):
         self.fullname = fullname
         self.path = path
@@ -169,11 +239,31 @@ class PPyLoader(SourceLoader, Configurable):
         return self.path
 
     def get_data(self, filename):
-        """exec_module is already defined for us, we just have to provide a way
-        of getting the source code of the module"""
+        if filename.endswith(tuple(BYTECODE_SUFFIXES)):
+            with open(filename, "rb") as f:
+                # replace size because it will never match after preprocessing
+                data = f.read(BYTECODE_HEADER_LENGTH)
+                flags = _bootstrap_external._classify_pyc(data, filename, {})
+                hash_based = flags & 0b1 != 0
+                if not hash_based:
+                    data = data[:-BYTECODE_SIZE_LENGTH] + self.path_stats(self.path)["size"].to_bytes(
+                        BYTECODE_SIZE_LENGTH,
+                        "little",
+                        signed=False,
+                    )
+                return data + f.read()
+
+        data, deps = preprocess_file(self.path, self._config)
         # save preprocessed file to display actual SyntaxError
-        data = preprocessed_files[self.path] = preprocess_file(self.path, self._config)
+        preprocessed_files[self.path] = data
+        dependencies[self.path] = deps
         return data.encode()
+
+    def source_to_code(self, data, path):
+        code = super().source_to_code(data, path)
+        if self.path in dependencies:
+            dependencies[code] = dependencies.pop(self.path)
+        return code
 
 
 def create_exception_handler(module: Optional[ModuleType]):

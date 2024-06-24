@@ -8,6 +8,10 @@ from .config import FILE_EXTENSIONS
 
 
 class PyPreprocessor(Preprocessor):
+    def __init__(self, disabled=False):
+        super().__init__(disabled=disabled)
+        self.included_files = []
+
     def write(self, file):
         macros_backup = self.macros.copy()
         try:
@@ -18,6 +22,10 @@ class PyPreprocessor(Preprocessor):
 
     def on_error(self, file, line, msg):
         raise SyntaxError(msg, (file, line, 1, getline(file, line)))
+
+    def on_file_open(self, is_system_include, includepath):
+        self.included_files.append(includepath)
+        return super().on_file_open(is_system_include, includepath)
 
 
 class PreprocessorError(Exception):
@@ -38,12 +46,12 @@ def preprocess(src, p=None):
         raise PreprocessorError(f"internal preprocessor error at around {last.source}:{last.lineno}") from e
     if p.return_code != 0:
         raise PreprocessorError("preprocessor exit code is not zero")
-    return out.getvalue()
+    return out.getvalue(), p.included_files
 
 
 def preprocess_file(filename, config={}):
     with open(filename) as f:
-        res = preprocess(f)
+        res, deps = preprocess(f)
     if config.get("save_files"):
         dir, file = path.split(filename)
         if file.endswith(tuple(FILE_EXTENSIONS)):
@@ -52,7 +60,7 @@ def preprocess_file(filename, config={}):
             file += ".py"
         with open(path.join(dir, file), "w") as f:
             f.write(res)
-    return res
+    return res, deps
 
 
 def maybe_preprocess(src, filename, preprocessor=None):
@@ -64,7 +72,7 @@ def maybe_preprocess(src, filename, preprocessor=None):
             preprocessor = PyPreprocessor(disabled=True)
         # this is essential for interactive mode
         has_newline = src.endswith("\n")
-        src = preprocess(src, preprocessor)
+        src, _ = preprocess(src, preprocessor)
         if not has_newline:
             src = src.rstrip("\n")
     return src
