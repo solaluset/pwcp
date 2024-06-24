@@ -20,8 +20,20 @@ from codeop import Compile, _maybe_compile
 from importlib import invalidate_caches
 from importlib import _bootstrap_external
 from importlib.util import spec_from_loader
-from importlib.machinery import BYTECODE_SUFFIXES, SOURCE_SUFFIXES, FileFinder, PathFinder, SourceFileLoader, all_suffixes
-from importlib._bootstrap_external import _code_to_timestamp_pyc, _validate_timestamp_pyc, _code_to_hash_pyc, _validate_hash_pyc
+from importlib.machinery import (
+    BYTECODE_SUFFIXES,
+    SOURCE_SUFFIXES,
+    FileFinder,
+    PathFinder,
+    SourceFileLoader,
+    all_suffixes,
+)
+from importlib._bootstrap_external import (
+    _code_to_timestamp_pyc,
+    _validate_timestamp_pyc,
+    _code_to_hash_pyc,
+    _validate_hash_pyc,
+)
 from traceback import print_exception
 from types import ModuleType, TracebackType
 from typing import Optional, Type
@@ -55,7 +67,9 @@ def patched_compile(src, filename, *args, **kwargs):
 @functools.wraps(_maybe_compile)
 def patched_maybe_compile(compiler, src, filename, symbol):
     try:
-        src = maybe_preprocess(src, filename, getattr(compiler, "preprocessor", None))
+        src = maybe_preprocess(
+            src, filename, getattr(compiler, "preprocessor", None)
+        )
     except SyntaxError as e:
         msg, eargs = e.args
         if msg.startswith("Unterminated"):
@@ -95,18 +109,24 @@ def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
     deps = dependencies.get(code, None)
     if deps:
         max_mtime = _get_max_mtime(deps)
-        data.extend(max_mtime.to_bytes(BYTECODE_SIZE_LENGTH, "little", signed=False))
+        data.extend(
+            max_mtime.to_bytes(BYTECODE_SIZE_LENGTH, "little", signed=False)
+        )
         data.extend(marshal.dumps(deps))
     return data
 
 
 @functools.wraps(_validate_timestamp_pyc)
-def patched_validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details):
+def patched_validate_timestamp_pyc(
+    data, source_mtime, source_size, name, exc_details
+):
     _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
     data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
     code = marshal.load(data_f)
     if code.co_filename.endswith(tuple(FILE_EXTENSIONS)):
-        pyc_mtime = int.from_bytes(data_f.read(BYTECODE_SIZE_LENGTH), "little", signed=False)
+        pyc_mtime = int.from_bytes(
+            data_f.read(BYTECODE_SIZE_LENGTH), "little", signed=False
+        )
         max_mtime = _get_max_mtime(marshal.load(data_f))
         if max_mtime > pyc_mtime:
             raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
@@ -114,7 +134,9 @@ def patched_validate_timestamp_pyc(data, source_mtime, source_size, name, exc_de
 
 def _get_file_hash(file):
     with open(file, "rb") as f:
-        return _imp.source_hash(_bootstrap_external._RAW_MAGIC_NUMBER, f.read())
+        return _imp.source_hash(
+            _bootstrap_external._RAW_MAGIC_NUMBER, f.read()
+        )
 
 
 @functools.wraps(_code_to_hash_pyc)
@@ -149,7 +171,9 @@ def apply_monkeypatch():
     codeop._maybe_compile = patched_maybe_compile
     codeop.Compile = patched_Compile
     _bootstrap_external._code_to_timestamp_pyc = patched_code_to_timestamp_pyc
-    _bootstrap_external._validate_timestamp_pyc = patched_validate_timestamp_pyc
+    _bootstrap_external._validate_timestamp_pyc = (
+        patched_validate_timestamp_pyc
+    )
     _bootstrap_external._code_to_hash_pyc = patched_code_to_hash_pyc
     _bootstrap_external._validate_hash_pyc = patched_validate_hash_pyc
 
@@ -246,7 +270,9 @@ class PPyLoader(SourceFileLoader, Configurable):
                 flags = _bootstrap_external._classify_pyc(data, filename, {})
                 hash_based = flags & 0b1 != 0
                 if not hash_based:
-                    data = data[:-BYTECODE_SIZE_LENGTH] + self.path_stats(self.path)["size"].to_bytes(
+                    data = data[:-BYTECODE_SIZE_LENGTH] + self.path_stats(
+                        self.path
+                    )["size"].to_bytes(
                         BYTECODE_SIZE_LENGTH,
                         "little",
                         signed=False,
@@ -268,14 +294,18 @@ class PPyLoader(SourceFileLoader, Configurable):
 
 def create_exception_handler(module: Optional[ModuleType]):
     def handle_exc(
-        e_type: Type[BaseException], e: BaseException, tb: Optional[TracebackType]
+        e_type: Type[BaseException],
+        e: BaseException,
+        tb: Optional[TracebackType],
     ):
         if isinstance(e, SyntaxError) and preprocessed_files.get(e.filename):
             # replace raw text from file with actual code
             data = preprocessed_files[e.filename]
             e.text = data.splitlines()[e.lineno - 1]
         # remove outer frames from traceback
-        while tb and module and tb.tb_frame.f_code.co_filename != module.__file__:
+        while (
+            tb and module and tb.tb_frame.f_code.co_filename != module.__file__
+        ):
             tb = tb.tb_next
         print_exception(e_type, e, tb)
 

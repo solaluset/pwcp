@@ -43,7 +43,10 @@ def preprocess(src, p=None):
         raise
     except Exception as e:
         last = p.lastdirective
-        raise PreprocessorError(f"internal preprocessor error at around {last.source}:{last.lineno}") from e
+        raise PreprocessorError(
+            "internal preprocessor error"
+            f" at around {last.source}:{last.lineno}"
+        ) from e
     if p.return_code != 0:
         raise PreprocessorError("preprocessor exit code is not zero")
     return out.getvalue(), p.included_files
