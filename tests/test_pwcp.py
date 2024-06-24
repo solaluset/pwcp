@@ -12,6 +12,9 @@ from pwcp import main
 from pwcp.hooks import is_package
 
 
+sys.dont_write_bytecode = True
+
+
 def test_regular_file():
     with patch("sys.stdout", new=StringIO()):
         main(["tests/hello.py"])
