@@ -15,9 +15,10 @@ from builtins import compile
 from linecache import getlines
 from codeop import Compile, _maybe_compile
 from importlib import invalidate_caches
+from importlib import _bootstrap_external
 from importlib.abc import SourceLoader
 from importlib.util import spec_from_loader
-from importlib.machinery import SOURCE_SUFFIXES, FileFinder, PathFinder, all_suffixes
+from importlib.machinery import BYTECODE_SUFFIXES, SOURCE_SUFFIXES, FileFinder, PathFinder, all_suffixes
 from traceback import print_exception
 from types import ModuleType, TracebackType
 from typing import Optional, Type
@@ -160,7 +161,7 @@ class PPyPathFinder(PathFinder, Configurable):
         return None
 
 
-class PPyLoader(SourceLoader, Configurable):
+class PPyLoader(SourceLoader, _bootstrap_external.SourceLoader, Configurable):
     def __init__(self, fullname, path):
         self.fullname = fullname
         self.path = path
@@ -169,11 +170,33 @@ class PPyLoader(SourceLoader, Configurable):
         return self.path
 
     def get_data(self, filename):
-        """exec_module is already defined for us, we just have to provide a way
-        of getting the source code of the module"""
+        if filename.endswith(tuple(BYTECODE_SUFFIXES)):
+            BYTECODE_HEADER_LENGTH = 12
+            BYTECODE_SIZE_LENGTH = 4
+
+            with open(filename, "rb") as f:
+                # replace size because it will never match after preprocessing
+                data = f.read(BYTECODE_HEADER_LENGTH)
+                f.seek(BYTECODE_SIZE_LENGTH, os.SEEK_CUR)
+                data += self.path_stats(self.path)["size"].to_bytes(
+                    BYTECODE_SIZE_LENGTH,
+                    "little",
+                    signed=False,
+                )
+                return data + f.read()
+
         # save preprocessed file to display actual SyntaxError
         data = preprocessed_files[self.path] = preprocess_file(self.path, self._config)
         return data.encode()
+
+    def path_stats(self, path: str) -> dict:
+        st = os.stat(path)
+        return {"mtime": st.st_mtime, "size": st.st_size}
+
+    def set_data(self, path: str, data: bytes):
+        # do as py_compile does
+        mode = _bootstrap_external._calc_mode(self.path)
+        _bootstrap_external._write_atomic(path, data, mode)
 
 
 def create_exception_handler(module: Optional[ModuleType]):
