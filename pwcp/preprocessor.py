@@ -45,11 +45,11 @@ def preprocess(src: Union[str, TextIO], p: Optional[PyPreprocessor] = None):
     except SyntaxError:
         raise
     except Exception as e:
+        msg = "internal preprocessor error"
         last = p.lastdirective
-        raise PreprocessorError(
-            "internal preprocessor error"
-            f" at around {last.source}:{last.lineno}"
-        ) from e
+        if last:
+            msg += f" at around {last.source}:{last.lineno}"
+        raise PreprocessorError(msg) from e
     if p.return_code != 0:
         raise PreprocessorError("preprocessor exit code is not zero")
     return out.getvalue(), p.included_files
