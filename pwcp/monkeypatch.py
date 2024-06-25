@@ -116,14 +116,8 @@ def patched_classify_pyc(data, name, exc_details):
     return flags
 
 
-def _get_max_mtime(files: list) -> int:
-    mtimes = [0]
-    for file in files:
-        try:
-            mtimes.append(int(os.stat(file).st_mtime))
-        except FileNotFoundError:
-            pass
-    return max(mtimes)
+def _get_file_mtime(file: str) -> int:
+    return int(os.stat(file).st_mtime)
 
 
 @functools.wraps(_code_to_timestamp_pyc)
@@ -131,11 +125,8 @@ def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
     data = _code_to_timestamp_pyc(code, mtime, source_size)
     if code in dependencies:
         deps = dependencies.pop(code)
-        max_mtime = _get_max_mtime(deps)
-        data.extend(
-            max_mtime.to_bytes(BYTECODE_SIZE_LENGTH, "little", signed=False)
-        )
-        data.extend(marshal.dumps(deps))
+        mtimes = {file: _get_file_mtime(file) for file in deps}
+        data.extend(marshal.dumps(mtimes))
     return data
 
 
@@ -157,12 +148,16 @@ def patched_validate_timestamp_pyc(
         )
     _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
     if is_pwcp_pyc:
-        pyc_mtime = int.from_bytes(
-            data_f.read(BYTECODE_SIZE_LENGTH), "little", signed=False
-        )
-        max_mtime = _get_max_mtime(marshal.load(data_f))
-        if max_mtime > pyc_mtime:
-            raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
+        mtimes = marshal.load(data_f)
+        for file, mtime in mtimes.items():
+            try:
+                current_mtime = _get_file_mtime(file)
+            except FileNotFoundError:
+                continue
+            if mtime != current_mtime:
+                raise ImportError(
+                    f"bytecode is stale for {name!r}", **exc_details
+                )
 
 
 def _get_file_hash(file):
