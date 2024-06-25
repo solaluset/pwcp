@@ -114,6 +114,9 @@ class PPyPathFinder(PathFinder, Configurable):
 
 
 class PPyLoader(SourceFileLoader, Configurable):
+    _skip_next_get_data = False
+    _in_get_code = False
+
     def __init__(self, fullname, path):
         self.fullname = fullname
         self.path = path
@@ -122,6 +125,10 @@ class PPyLoader(SourceFileLoader, Configurable):
         return self.path
 
     def get_data(self, filename):
+        if self._skip_next_get_data:
+            self.__class__._skip_next_get_data = False
+            return None
+
         if filename.endswith(tuple(BYTECODE_SUFFIXES)):
             with open(filename, "rb") as f:
                 # replace size because it will never match after preprocessing
@@ -149,6 +156,13 @@ class PPyLoader(SourceFileLoader, Configurable):
         if self.path in dependencies:
             dependencies[code] = dependencies.pop(self.path)
         return code
+
+    def get_code(self, fullname):
+        self.__class__._in_get_code = True
+        try:
+            return super().get_code(fullname)
+        finally:
+            self.__class__._in_get_code = False
 
 
 def create_exception_handler(module: Optional[ModuleType]):
