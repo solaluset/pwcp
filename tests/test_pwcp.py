@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from pwcp import main  # noqa: E402
-from pwcp.hooks import is_package  # noqa: E402
+from pwcp.utils import is_package  # noqa: E402
 
 
 sys.dont_write_bytecode = True

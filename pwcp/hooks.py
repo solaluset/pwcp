@@ -3,9 +3,7 @@
 # https://stackoverflow.com/a/45168493/
 # https://stackoverflow.com/a/48671982/
 
-import os
 import sys
-import warnings
 from os import getcwd
 from importlib import invalidate_caches
 from importlib import _bootstrap_external
@@ -16,14 +14,10 @@ from importlib.machinery import (
     FileFinder,
     PathFinder,
     SourceFileLoader,
-    all_suffixes,
 )
-from traceback import print_exception
-from types import ModuleType, TracebackType
-from typing import Optional, Type
 
 from .config import FILE_EXTENSIONS
-from .preprocessor import PreprocessorError, preprocess_file
+from .preprocessor import preprocess_file
 from .monkeypatch import (
     BYTECODE_HEADER_LENGTH,
     BYTECODE_SIZE_LENGTH,
@@ -163,47 +157,6 @@ class PPyLoader(SourceFileLoader, Configurable):
             return super().get_code(fullname)
         finally:
             self.__class__._in_get_code = False
-
-
-def create_exception_handler(module: Optional[ModuleType]):
-    def handle_exc(
-        e_type: Type[BaseException],
-        e: BaseException,
-        tb: Optional[TracebackType],
-    ):
-        if isinstance(e, SyntaxError) and preprocessed_files.get(e.filename):
-            # replace raw text from file with actual code
-            data = preprocessed_files[e.filename]
-            e.text = data.splitlines()[e.lineno - 1]
-        # remove outer frames from traceback
-        orig_tb = tb
-        while (
-            tb and module and tb.tb_frame.f_code.co_filename != module.__file__
-        ):
-            tb = tb.tb_next
-        if not tb:
-            tb = orig_tb
-            if not isinstance(e, (SyntaxError, PreprocessorError)):
-                print("Internal error:", file=sys.stderr)
-        print_exception(e_type, e, tb)
-
-    return handle_exc
-
-
-def is_package(module_name: str) -> bool:
-    if not module_name:
-        return False
-    module_name = module_name.replace(".", os.sep)
-    path_list = [os.path.join(path, module_name) for path in sys.path]
-    for path in path_list:
-        for suffix in all_suffixes():
-            if os.path.isfile(path + suffix):
-                return False
-    for path in path_list:
-        if os.path.isdir(path):
-            return True
-    warnings.warn("Module file or directory not found, assuming code module.")
-    return False
 
 
 LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS

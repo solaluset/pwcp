@@ -1,10 +1,10 @@
-from os import path
 from io import StringIO
 from linecache import getline
 
 from pypp import Preprocessor
 
 from .config import FILE_EXTENSIONS
+from .utils import py_from_ppy_filename
 
 
 class PyPreprocessor(Preprocessor):
@@ -56,12 +56,7 @@ def preprocess_file(filename, config={}):
     with open(filename) as f:
         res, deps = preprocess(f)
     if config.get("save_files"):
-        dir, file = path.split(filename)
-        if file.endswith(tuple(FILE_EXTENSIONS)):
-            file = file.rpartition(".")[0] + ".py"
-        else:
-            file += ".py"
-        with open(path.join(dir, file), "w") as f:
+        with open(py_from_ppy_filename(filename), "w") as f:
             f.write(res)
     return res, deps
 
