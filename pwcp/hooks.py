@@ -51,6 +51,10 @@ class Configurable:
     _config = {}
 
     @classmethod
+    def get_config(self) -> dict:
+        return self._config
+
+    @classmethod
     def set_config(cls, config: dict):
         cls._config = config
 

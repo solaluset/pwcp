@@ -21,6 +21,7 @@ from importlib._bootstrap_external import (
 
 from .preprocessor import PyPreprocessor, maybe_preprocess
 from .config import FILE_EXTENSIONS
+from .utils import py_from_ppy_filename
 
 
 preprocessed_files = {}
@@ -34,6 +35,10 @@ BYTECODE_SIZE_LENGTH = 4
 def patched_getlines(filename, module_globals=None):
     if filename in preprocessed_files:
         return preprocessed_files[filename].splitlines()
+    if PPyLoader.get_config()["save_files"]:
+        py_filename = py_from_ppy_filename(filename)
+        if os.path.isfile(py_filename):
+            return getlines(py_filename, module_globals)
     return getlines(filename, module_globals)
 
 
@@ -95,8 +100,6 @@ def patched_classify_pyc(data, name, exc_details):
         if _imp.check_hash_based_pycs != "never" and (
             check_source or _imp.check_hash_based_pycs == "always"
         ):
-            from .hooks import PPyLoader
-
             # set skip flag only when our loader is currently working
             PPyLoader._skip_next_get_data = PPyLoader._in_get_code
 
@@ -184,6 +187,10 @@ def patched_validate_hash_pyc(data, source_hash, name, exc_details):
 
 
 def apply_monkeypatch():
+    global PPyLoader
+
+    from .hooks import PPyLoader
+
     linecache.getlines = patched_getlines
 
     builtins.compile = patched_compile
