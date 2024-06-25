@@ -3,155 +3,34 @@
 # https://stackoverflow.com/a/45168493/
 # https://stackoverflow.com/a/48671982/
 
-import os
 import sys
-import _imp
-import codeop
-import marshal
-import warnings
-import builtins
-import functools
-import linecache
 from os import getcwd
-from io import BytesIO
-from builtins import compile
-from linecache import getlines
-from codeop import Compile, _maybe_compile
+from types import CodeType
+from typing import Callable, Optional
 from importlib import invalidate_caches
 from importlib import _bootstrap_external
 from importlib.util import spec_from_loader
-from importlib.machinery import BYTECODE_SUFFIXES, SOURCE_SUFFIXES, FileFinder, PathFinder, SourceFileLoader, all_suffixes
-from importlib._bootstrap_external import _code_to_timestamp_pyc, _validate_timestamp_pyc, _code_to_hash_pyc, _validate_hash_pyc
-from traceback import print_exception
-from types import ModuleType, TracebackType
-from typing import Optional, Type
-from .preprocessor import PyPreprocessor, preprocess_file, maybe_preprocess
+from importlib.machinery import (
+    BYTECODE_SUFFIXES,
+    SOURCE_SUFFIXES,
+    FileFinder,
+    PathFinder,
+    SourceFileLoader,
+)
+
 from .config import FILE_EXTENSIONS
+from .preprocessor import preprocess_file
+from .monkeypatch import (
+    BYTECODE_HEADER_LENGTH,
+    BYTECODE_SIZE_LENGTH,
+    apply_monkeypatch,
+    dependencies,
+    preprocessed_files,
+)
 
 
 _path_importer_cache = {}
 _path_hooks = []
-
-preprocessed_files = {}
-dependencies = {}
-
-BYTECODE_HEADER_LENGTH = 16
-BYTECODE_SIZE_LENGTH = 4
-
-
-@functools.wraps(getlines)
-def patched_getlines(filename, module_globals=None):
-    if filename in preprocessed_files:
-        return preprocessed_files[filename].splitlines()
-    return getlines(filename, module_globals)
-
-
-@functools.wraps(compile)
-def patched_compile(src, filename, *args, **kwargs):
-    src = maybe_preprocess(src, filename)
-    return compile(src, filename, *args, **kwargs)
-
-
-@functools.wraps(_maybe_compile)
-def patched_maybe_compile(compiler, src, filename, symbol):
-    try:
-        src = maybe_preprocess(src, filename, getattr(compiler, "preprocessor", None))
-    except SyntaxError as e:
-        msg, eargs = e.args
-        if msg.startswith("Unterminated"):
-            return None
-        eargs = list(eargs)
-        eargs[3] = src.splitlines()[e.lineno - 1]
-        e.args = (msg, tuple(eargs))
-        raise
-    try:
-        return _maybe_compile(compiler, src, filename, symbol)
-    except SyntaxError as e:
-        if e.msg.startswith(
-            ("unexpected EOF while parsing", "expected an indented block")
-        ):
-            return None
-        raise
-
-
-@functools.wraps(Compile, updated=())
-class patched_Compile(Compile):
-    def __init__(self):
-        super().__init__()
-        self.preprocessor = PyPreprocessor()
-
-    def __call__(self, source, filename, symbol, **kwargs):
-        source = maybe_preprocess(source, filename, self.preprocessor)
-        return super().__call__(source, filename, symbol, **kwargs)
-
-
-def _get_max_mtime(files: list) -> int:
-    return max(int(os.stat(file).st_mtime) for file in files)
-
-
-@functools.wraps(_code_to_timestamp_pyc)
-def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
-    data = _code_to_timestamp_pyc(code, mtime, source_size)
-    deps = dependencies.get(code, None)
-    if deps:
-        max_mtime = _get_max_mtime(deps)
-        data.extend(max_mtime.to_bytes(BYTECODE_SIZE_LENGTH, "little", signed=False))
-        data.extend(marshal.dumps(deps))
-    return data
-
-
-@functools.wraps(_validate_timestamp_pyc)
-def patched_validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details):
-    _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
-    data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
-    code = marshal.load(data_f)
-    if code.co_filename.endswith(tuple(FILE_EXTENSIONS)):
-        pyc_mtime = int.from_bytes(data_f.read(BYTECODE_SIZE_LENGTH), "little", signed=False)
-        max_mtime = _get_max_mtime(marshal.load(data_f))
-        if max_mtime > pyc_mtime:
-            raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
-
-
-def _get_file_hash(file):
-    with open(file, "rb") as f:
-        return _imp.source_hash(_bootstrap_external._RAW_MAGIC_NUMBER, f.read())
-
-
-@functools.wraps(_code_to_hash_pyc)
-def patched_code_to_hash_pyc(code, source_hash, checked=True):
-    source_hash = _get_file_hash(code.co_filename)
-    data = _code_to_hash_pyc(code, source_hash, checked)
-    deps = dependencies.get(code, None)
-    if deps:
-        hashes = {file: _get_file_hash(file) for file in deps}
-        data.extend(marshal.dumps(hashes))
-    return data
-
-
-@functools.wraps(_validate_hash_pyc)
-def patched_validate_hash_pyc(data, source_hash, name, exc_details):
-    data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
-    code = marshal.load(data_f)
-    source_hash = _get_file_hash(code.co_filename)
-    _validate_hash_pyc(data, source_hash, name, exc_details)
-    hashes = marshal.load(data_f)
-    for file, hash_ in hashes.items():
-        if hash_ != _get_file_hash(file):
-            raise ImportError(
-                f"hash in bytecode doesn't match hash of source {name!r}",
-                **exc_details,
-            )
-
-
-def apply_monkeypatch():
-    linecache.getlines = patched_getlines
-    builtins.compile = patched_compile
-    codeop._maybe_compile = patched_maybe_compile
-    codeop.Compile = patched_Compile
-    _bootstrap_external._code_to_timestamp_pyc = patched_code_to_timestamp_pyc
-    _bootstrap_external._validate_timestamp_pyc = patched_validate_timestamp_pyc
-    _bootstrap_external._code_to_hash_pyc = patched_code_to_hash_pyc
-    _bootstrap_external._validate_hash_pyc = patched_validate_hash_pyc
 
 
 def find_spec_fallback(fullname, path, target):
@@ -174,6 +53,10 @@ class Configurable:
     _config = {}
 
     @classmethod
+    def get_config(self) -> dict:
+        return self._config
+
+    @classmethod
     def set_config(cls, config: dict):
         cls._config = config
 
@@ -192,7 +75,7 @@ class PPyPathFinder(PathFinder, Configurable):
                 finder.invalidate_caches()
 
     @classmethod
-    def _path_hooks(cls, path):
+    def _path_hooks(cls, path: str):
         for hook in _path_hooks:
             try:
                 return hook(path)
@@ -202,7 +85,7 @@ class PPyPathFinder(PathFinder, Configurable):
             return None
 
     @classmethod
-    def _path_importer_cache(cls, path):
+    def _path_importer_cache(cls, path: str):
         if path == "":
             try:
                 path = getcwd()
@@ -218,7 +101,9 @@ class PPyPathFinder(PathFinder, Configurable):
         return finder
 
     @classmethod
-    def find_spec(cls, fullname, path, target=None):
+    def find_spec(
+        cls, fullname: str, path: Optional[list] = None, target=None
+    ):
         if cls._config.get("prefer_python"):
             spec = find_spec_fallback(fullname, path, target)
             if spec:
@@ -231,14 +116,21 @@ class PPyPathFinder(PathFinder, Configurable):
 
 
 class PPyLoader(SourceFileLoader, Configurable):
-    def __init__(self, fullname, path):
+    _skip_next_get_data = False
+    _in_get_code = False
+
+    def __init__(self, fullname: str, path: str):
         self.fullname = fullname
         self.path = path
 
-    def get_filename(self, fullname):
+    def get_filename(self, fullname: str) -> str:
         return self.path
 
-    def get_data(self, filename):
+    def get_data(self, filename: str) -> Optional[bytes]:
+        if self._skip_next_get_data:
+            self.__class__._skip_next_get_data = False
+            return None
+
         if filename.endswith(tuple(BYTECODE_SUFFIXES)):
             with open(filename, "rb") as f:
                 # replace size because it will never match after preprocessing
@@ -246,62 +138,41 @@ class PPyLoader(SourceFileLoader, Configurable):
                 flags = _bootstrap_external._classify_pyc(data, filename, {})
                 hash_based = flags & 0b1 != 0
                 if not hash_based:
-                    data = data[:-BYTECODE_SIZE_LENGTH] + self.path_stats(self.path)["size"].to_bytes(
+                    data = data[:-BYTECODE_SIZE_LENGTH] + self.path_stats(
+                        self.path
+                    )["size"].to_bytes(
                         BYTECODE_SIZE_LENGTH,
                         "little",
                         signed=False,
                     )
                 return data + f.read()
 
+        # indicate that we started preprocessing
+        preprocessed_files[self.path] = None
         data, deps = preprocess_file(self.path, self._config)
         # save preprocessed file to display actual SyntaxError
         preprocessed_files[self.path] = data
         dependencies[self.path] = deps
         return data.encode()
 
-    def source_to_code(self, data, path):
+    def source_to_code(self, data: bytes, path: str) -> CodeType:
         code = super().source_to_code(data, path)
         if self.path in dependencies:
             dependencies[code] = dependencies.pop(self.path)
         return code
 
-
-def create_exception_handler(module: Optional[ModuleType]):
-    def handle_exc(
-        e_type: Type[BaseException], e: BaseException, tb: Optional[TracebackType]
-    ):
-        if isinstance(e, SyntaxError) and preprocessed_files.get(e.filename):
-            # replace raw text from file with actual code
-            data = preprocessed_files[e.filename]
-            e.text = data.splitlines()[e.lineno - 1]
-        # remove outer frames from traceback
-        while tb and module and tb.tb_frame.f_code.co_filename != module.__file__:
-            tb = tb.tb_next
-        print_exception(e_type, e, tb)
-
-    return handle_exc
-
-
-def is_package(module_name: str) -> bool:
-    if not module_name:
-        return False
-    module_name = module_name.replace(".", os.sep)
-    path_list = [os.path.join(path, module_name) for path in sys.path]
-    for path in path_list:
-        for suffix in all_suffixes():
-            if os.path.isfile(path + suffix):
-                return False
-    for path in path_list:
-        if os.path.isdir(path):
-            return True
-    warnings.warn("Module file or directory not found, assuming code module.")
-    return False
+    def get_code(self, fullname: str) -> CodeType:
+        self.__class__._in_get_code = True
+        try:
+            return super().get_code(fullname)
+        finally:
+            self.__class__._in_get_code = False
 
 
 LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS
 
 
-def _install():
+def _install() -> Callable[[dict], None]:
     done = False
 
     def install(config: dict = {}):

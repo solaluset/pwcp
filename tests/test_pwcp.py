@@ -9,11 +9,12 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from pwcp import main
-from pwcp.hooks import is_package
+from pwcp import main  # noqa: E402
+from pwcp.utils import is_package  # noqa: E402
 
 
 sys.dont_write_bytecode = True
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 
 def test_regular_file():
@@ -60,7 +61,7 @@ def test_syntax_error():
             [sys.executable, "-m", "pwcp", "tests/syntax_error.ppy"],
             stderr=STDOUT,
         )
-    assert ctx.value.output.splitlines()[1].strip() == b'print("hello")!'
+    assert ctx.value.output.splitlines()[-3].strip() == b'print("hello")!'
 
 
 def test_type_error():
@@ -78,7 +79,11 @@ def test_error_directive():
             [sys.executable, "-m", "pwcp", "tests/error_directive.ppy"],
             stderr=STDOUT,
         )
-    assert ctx.value.output.splitlines()[1].strip() == b"pwcp.preprocessor.PreprocessorError: preprocessor exit code is not zero"
+    assert (
+        ctx.value.output.splitlines()[-1].strip()
+        == b"pwcp.preprocessor.PreprocessorError:"
+        b" preprocessor exit code is not zero"
+    )
 
 
 def test_interactive():
@@ -98,7 +103,9 @@ def f():
 
 f()
     """.strip()
-    with patch("sys.stdin", new=StringIO(code)), patch("sys.stdout", new=StringIO()):
+    with patch("sys.stdin", new=StringIO(code)), patch(
+        "sys.stdout", new=StringIO()
+    ):
         main(["-m", "code"])
         assert (
             sys.stdout.getvalue()
@@ -121,7 +128,9 @@ f()
 print(1)
 #endif
     """.strip()
-    with patch("sys.stdin", new=StringIO(code)), patch("sys.stdout", new=StringIO()):
+    with patch("sys.stdin", new=StringIO(code)), patch(
+        "sys.stdout", new=StringIO()
+    ):
         main(["-m", "code"])
         assert sys.stdout.getvalue() == sys.ps1 + sys.ps2 * 3 + "1\n" + sys.ps1
 

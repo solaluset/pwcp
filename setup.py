@@ -5,7 +5,7 @@ import ppsetuptools
 from setuptools import setup
 
 sys.path.append("pwcp")
-from version import __version__
+from version import __version__  # noqa: E402
 
 del sys.path[-1]
 

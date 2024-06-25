@@ -7,15 +7,20 @@ from importlib.machinery import SourceFileLoader
 from . import hooks
 from .config import FILE_EXTENSIONS
 from .version import __version__
+from .utils import create_exception_handler, is_package
 
 
 parser = argparse.ArgumentParser(
-    "python -m " + __package__
-    if sys.argv[0] == "-m"
-    else os.path.basename(sys.argv[0]),
+    (
+        "python -m " + __package__
+        if sys.argv[0] == "-m"
+        else os.path.basename(sys.argv[0])
+    ),
     description="Python with C preprocessor",
 )
-parser.add_argument("--version", action="version", version="pwcp " + __version__)
+parser.add_argument(
+    "--version", action="version", version="pwcp " + __version__
+)
 parser.add_argument(
     "--prefer-py",
     dest="prefer_python",
@@ -50,7 +55,7 @@ def main(args=sys.argv[1:]):
         vars_override = {"__package__": None}
     else:
         sys.path.insert(0, os.getcwd())
-        if hooks.is_package(args.target):
+        if is_package(args.target):
             args.target += ".__main__"
         spec = util.find_spec(args.target)
         if spec is None:
@@ -61,7 +66,7 @@ def main(args=sys.argv[1:]):
     module = util.module_from_spec(spec)
     vars(module).update(vars_override)
     sys.modules["__main__"] = module
-    sys.excepthook = hooks.create_exception_handler(module)
+    sys.excepthook = create_exception_handler(module)
     orig_argv = sys.argv.copy()
     sys.argv.clear()
     sys.argv.append(module.__file__)

@@ -1,10 +1,11 @@
-from os import path
 from io import StringIO
 from linecache import getline
+from typing import Any, Optional, TextIO, Tuple, Union
 
 from pypp import Preprocessor
 
 from .config import FILE_EXTENSIONS
+from .utils import py_from_ppy_filename
 
 
 class PyPreprocessor(Preprocessor):
@@ -12,7 +13,7 @@ class PyPreprocessor(Preprocessor):
         super().__init__(disabled=disabled)
         self.included_files = []
 
-    def write(self, file):
+    def write(self, file: TextIO):
         macros_backup = self.macros.copy()
         try:
             super().write(file)
@@ -20,10 +21,12 @@ class PyPreprocessor(Preprocessor):
             self.macros = macros_backup
             raise
 
-    def on_error(self, file, line, msg):
+    def on_error(self, file: str, line: int, msg: str):
         raise SyntaxError(msg, (file, line, 1, getline(file, line)))
 
-    def on_file_open(self, is_system_include, includepath):
+    def on_file_open(
+        self, is_system_include: bool, includepath: str
+    ) -> TextIO:
         self.included_files.append(includepath)
         return super().on_file_open(is_system_include, includepath)
 
@@ -32,7 +35,7 @@ class PreprocessorError(Exception):
     pass
 
 
-def preprocess(src, p=None):
+def preprocess(src: Union[str, TextIO], p: Optional[PyPreprocessor] = None):
     if p is None:
         p = PyPreprocessor()
     p.parse(src)
@@ -42,28 +45,28 @@ def preprocess(src, p=None):
     except SyntaxError:
         raise
     except Exception as e:
+        msg = "internal preprocessor error"
         last = p.lastdirective
-        raise PreprocessorError(f"internal preprocessor error at around {last.source}:{last.lineno}") from e
+        if last:
+            msg += f" at around {last.source}:{last.lineno}"
+        raise PreprocessorError(msg) from e
     if p.return_code != 0:
         raise PreprocessorError("preprocessor exit code is not zero")
     return out.getvalue(), p.included_files
 
 
-def preprocess_file(filename, config={}):
+def preprocess_file(filename: str, config: dict = {}) -> Tuple[str, list]:
     with open(filename) as f:
         res, deps = preprocess(f)
     if config.get("save_files"):
-        dir, file = path.split(filename)
-        if file.endswith(tuple(FILE_EXTENSIONS)):
-            file = file.rpartition(".")[0] + ".py"
-        else:
-            file += ".py"
-        with open(path.join(dir, file), "w") as f:
+        with open(py_from_ppy_filename(filename), "w") as f:
             f.write(res)
     return res, deps
 
 
-def maybe_preprocess(src, filename, preprocessor=None):
+def maybe_preprocess(
+    src: Any, filename: str, preprocessor: Optional[PyPreprocessor] = None
+):
     if isinstance(src, bytes):
         src = src.decode()
     if isinstance(src, str):
