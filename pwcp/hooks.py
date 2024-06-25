@@ -23,7 +23,7 @@ from types import ModuleType, TracebackType
 from typing import Optional, Type
 
 from .config import FILE_EXTENSIONS
-from .preprocessor import preprocess_file
+from .preprocessor import PreprocessorError, preprocess_file
 from .monkeypatch import (
     BYTECODE_HEADER_LENGTH,
     BYTECODE_SIZE_LENGTH,
@@ -169,7 +169,8 @@ def create_exception_handler(module: Optional[ModuleType]):
             tb = tb.tb_next
         if not tb:
             tb = orig_tb
-            print("Internal error:", file=sys.stderr)
+            if not isinstance(e, (SyntaxError, PreprocessorError)):
+                print("Internal error:", file=sys.stderr)
         print_exception(e_type, e, tb)
 
     return handle_exc
