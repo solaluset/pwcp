@@ -6,7 +6,7 @@
 import sys
 from os import getcwd
 from types import CodeType
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 from importlib import invalidate_caches
 from importlib.util import spec_from_loader
 from importlib.machinery import (
@@ -116,14 +116,7 @@ class PPyLoader(SourceFileLoader, Configurable):
     _skip_next_get_data = False
     _in_get_code = False
 
-    def __init__(self, fullname: str, path: str):
-        self.fullname = fullname
-        self.path = path
-
-    def get_filename(self, fullname: str) -> str:
-        return self.path
-
-    def get_data(self, filename: str) -> Optional[bytes]:
+    def get_data(self, filename: str) -> Optional[Union[str, bytes]]:
         if self._skip_next_get_data:
             self.__class__._skip_next_get_data = False
             return None
@@ -138,7 +131,7 @@ class PPyLoader(SourceFileLoader, Configurable):
         # save preprocessed file to display actual SyntaxError
         preprocessed_files[self.path] = data
         dependencies[self.path] = deps
-        return data.encode()
+        return data
 
     def source_to_code(self, data: bytes, path: str) -> CodeType:
         code = super().source_to_code(data, path)
