@@ -14,6 +14,7 @@ from pwcp.hooks import is_package  # noqa: E402
 
 
 sys.dont_write_bytecode = True
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 
 def test_regular_file():
