@@ -157,7 +157,7 @@ def patched_validate_timestamp_pyc(
 
 def _get_file_hash(file):
     with open(file, "rb") as f:
-        return _imp.source_hash(
+        return patched_source_hash(
             _bootstrap_external._RAW_MAGIC_NUMBER, f.read()
         )
 
