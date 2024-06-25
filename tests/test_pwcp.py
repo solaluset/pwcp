@@ -60,7 +60,7 @@ def test_syntax_error():
             [sys.executable, "-m", "pwcp", "tests/syntax_error.ppy"],
             stderr=STDOUT,
         )
-    assert ctx.value.output.splitlines()[1].strip() == b'print("hello")!'
+    assert ctx.value.output.splitlines()[-3].strip() == b'print("hello")!'
 
 
 def test_type_error():
@@ -79,7 +79,7 @@ def test_error_directive():
             stderr=STDOUT,
         )
     assert (
-        ctx.value.output.splitlines()[1].strip()
+        ctx.value.output.splitlines()[-1].strip()
         == b"pwcp.preprocessor.PreprocessorError:"
         b" preprocessor exit code is not zero"
     )
