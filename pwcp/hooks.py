@@ -147,6 +147,8 @@ class PPyLoader(SourceFileLoader, Configurable):
                     )
                 return data + f.read()
 
+        # indicate that we started preprocessing
+        preprocessed_files[self.path] = None
         data, deps = preprocess_file(self.path, self._config)
         # save preprocessed file to display actual SyntaxError
         preprocessed_files[self.path] = data

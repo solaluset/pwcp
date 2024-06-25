@@ -33,12 +33,19 @@ BYTECODE_SIZE_LENGTH = 4
 
 @functools.wraps(getlines)
 def patched_getlines(filename, module_globals=None):
+    filename = os.path.abspath(filename)
     if filename in preprocessed_files:
-        return preprocessed_files[filename].splitlines()
+        content = preprocessed_files[filename]
+        if content is None:
+            # preprocessing failed, show original code
+            return getlines(filename, module_globals)
+        return content.splitlines()
+
     if PPyLoader.get_config()["save_files"]:
         py_filename = py_from_ppy_filename(filename)
         if os.path.isfile(py_filename):
             return getlines(py_filename, module_globals)
+
     return getlines(filename, module_globals)
 
 
