@@ -145,7 +145,8 @@ def patched_validate_timestamp_pyc(
 ):
     data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
     code = marshal.load(data_f)
-    if code.co_filename.endswith(tuple(FILE_EXTENSIONS)):
+    is_pwcp_pyc = code.co_filename.endswith(tuple(FILE_EXTENSIONS))
+    if is_pwcp_pyc:
         source_size = int.from_bytes(
             data[
                 BYTECODE_HEADER_LENGTH
@@ -155,7 +156,7 @@ def patched_validate_timestamp_pyc(
             signed=False,
         )
     _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
-    if code.co_filename.endswith(tuple(FILE_EXTENSIONS)):
+    if is_pwcp_pyc:
         pyc_mtime = int.from_bytes(
             data_f.read(BYTECODE_SIZE_LENGTH), "little", signed=False
         )
@@ -187,11 +188,12 @@ def patched_code_to_hash_pyc(code, source_hash, checked=True):
 def patched_validate_hash_pyc(data, source_hash, name, exc_details):
     data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
     code = marshal.load(data_f)
-    if code.co_filename.endswith(tuple(FILE_EXTENSIONS)):
+    is_pwcp_pyc = code.co_filename.endswith(tuple(FILE_EXTENSIONS))
+    if is_pwcp_pyc:
         assert source_hash is None
         source_hash = _get_file_hash(code.co_filename)
     _validate_hash_pyc(data, source_hash, name, exc_details)
-    if code.co_filename.endswith(tuple(FILE_EXTENSIONS)):
+    if is_pwcp_pyc:
         hashes = marshal.load(data_f)
         for file, hash_ in hashes.items():
             try:
