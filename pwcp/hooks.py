@@ -5,6 +5,8 @@
 
 import sys
 from os import getcwd
+from types import CodeType
+from typing import Callable, Optional
 from importlib import invalidate_caches
 from importlib import _bootstrap_external
 from importlib.util import spec_from_loader
@@ -73,7 +75,7 @@ class PPyPathFinder(PathFinder, Configurable):
                 finder.invalidate_caches()
 
     @classmethod
-    def _path_hooks(cls, path):
+    def _path_hooks(cls, path: str):
         for hook in _path_hooks:
             try:
                 return hook(path)
@@ -83,7 +85,7 @@ class PPyPathFinder(PathFinder, Configurable):
             return None
 
     @classmethod
-    def _path_importer_cache(cls, path):
+    def _path_importer_cache(cls, path: str):
         if path == "":
             try:
                 path = getcwd()
@@ -99,7 +101,9 @@ class PPyPathFinder(PathFinder, Configurable):
         return finder
 
     @classmethod
-    def find_spec(cls, fullname, path, target=None):
+    def find_spec(
+        cls, fullname: str, path: Optional[list] = None, target=None
+    ):
         if cls._config.get("prefer_python"):
             spec = find_spec_fallback(fullname, path, target)
             if spec:
@@ -115,14 +119,14 @@ class PPyLoader(SourceFileLoader, Configurable):
     _skip_next_get_data = False
     _in_get_code = False
 
-    def __init__(self, fullname, path):
+    def __init__(self, fullname: str, path: str):
         self.fullname = fullname
         self.path = path
 
-    def get_filename(self, fullname):
+    def get_filename(self, fullname: str) -> str:
         return self.path
 
-    def get_data(self, filename):
+    def get_data(self, filename: str) -> Optional[bytes]:
         if self._skip_next_get_data:
             self.__class__._skip_next_get_data = False
             return None
@@ -149,13 +153,13 @@ class PPyLoader(SourceFileLoader, Configurable):
         dependencies[self.path] = deps
         return data.encode()
 
-    def source_to_code(self, data, path):
+    def source_to_code(self, data: bytes, path: str) -> CodeType:
         code = super().source_to_code(data, path)
         if self.path in dependencies:
             dependencies[code] = dependencies.pop(self.path)
         return code
 
-    def get_code(self, fullname):
+    def get_code(self, fullname: str) -> CodeType:
         self.__class__._in_get_code = True
         try:
             return super().get_code(fullname)
@@ -166,7 +170,7 @@ class PPyLoader(SourceFileLoader, Configurable):
 LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS
 
 
-def _install():
+def _install() -> Callable[[dict], None]:
     done = False
 
     def install(config: dict = {}):

@@ -1,7 +1,7 @@
 import os
 import sys
 import warnings
-from typing import Optional, Type
+from typing import Callable, Optional, Type
 from traceback import print_exception
 from types import ModuleType, TracebackType
 from importlib.machinery import all_suffixes
@@ -9,7 +9,7 @@ from importlib.machinery import all_suffixes
 from . import preprocessor
 
 
-def create_exception_handler(module: Optional[ModuleType]):
+def create_exception_handler(module: Optional[ModuleType]) -> Callable:
     def handle_exc(
         e_type: Type[BaseException],
         e: BaseException,
