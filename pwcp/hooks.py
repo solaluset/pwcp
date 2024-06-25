@@ -8,7 +8,6 @@ from os import getcwd
 from types import CodeType
 from typing import Callable, Optional
 from importlib import invalidate_caches
-from importlib import _bootstrap_external
 from importlib.util import spec_from_loader
 from importlib.machinery import (
     BYTECODE_SUFFIXES,
@@ -21,8 +20,6 @@ from importlib.machinery import (
 from .config import FILE_EXTENSIONS
 from .preprocessor import preprocess_file
 from .monkeypatch import (
-    BYTECODE_HEADER_LENGTH,
-    BYTECODE_SIZE_LENGTH,
     apply_monkeypatch,
     dependencies,
     preprocessed_files,
@@ -133,19 +130,7 @@ class PPyLoader(SourceFileLoader, Configurable):
 
         if filename.endswith(tuple(BYTECODE_SUFFIXES)):
             with open(filename, "rb") as f:
-                # replace size because it will never match after preprocessing
-                data = f.read(BYTECODE_HEADER_LENGTH)
-                flags = _bootstrap_external._classify_pyc(data, filename, {})
-                hash_based = flags & 0b1 != 0
-                if not hash_based:
-                    data = data[:-BYTECODE_SIZE_LENGTH] + self.path_stats(
-                        self.path
-                    )["size"].to_bytes(
-                        BYTECODE_SIZE_LENGTH,
-                        "little",
-                        signed=False,
-                    )
-                return data + f.read()
+                return f.read()
 
         # indicate that we started preprocessing
         preprocessed_files[self.path] = None
