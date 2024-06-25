@@ -33,6 +33,9 @@ BYTECODE_SIZE_LENGTH = 4
 
 @functools.wraps(getlines)
 def patched_getlines(filename, module_globals=None):
+    if filename is None:
+        return []
+
     filename = os.path.abspath(filename)
     if filename in preprocessed_files:
         content = preprocessed_files[filename]
