@@ -143,9 +143,18 @@ def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
 def patched_validate_timestamp_pyc(
     data, source_mtime, source_size, name, exc_details
 ):
-    _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
     data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
     code = marshal.load(data_f)
+    if code.co_filename.endswith(tuple(FILE_EXTENSIONS)):
+        source_size = int.from_bytes(
+            data[
+                BYTECODE_HEADER_LENGTH
+                - BYTECODE_SIZE_LENGTH : BYTECODE_HEADER_LENGTH
+            ],
+            "little",
+            signed=False,
+        )
+    _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
     if code.co_filename.endswith(tuple(FILE_EXTENSIONS)):
         pyc_mtime = int.from_bytes(
             data_f.read(BYTECODE_SIZE_LENGTH), "little", signed=False
