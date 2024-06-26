@@ -6,7 +6,7 @@ from traceback import print_exception
 from types import ModuleType, TracebackType
 from importlib.machinery import all_suffixes
 
-from . import preprocessor
+from .errors import PreprocessorError
 
 
 def create_exception_handler(module: Optional[ModuleType]) -> Callable:
@@ -29,9 +29,7 @@ def create_exception_handler(module: Optional[ModuleType]) -> Callable:
             tb = tb.tb_next
         if not tb:
             tb = orig_tb
-            if not isinstance(
-                e, (SyntaxError, preprocessor.PreprocessorError)
-            ):
+            if not isinstance(e, (SyntaxError, PreprocessorError)):
                 print("Internal error:", file=sys.stderr)
         print_exception(e_type, e, tb)
 
