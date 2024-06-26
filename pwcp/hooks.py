@@ -6,6 +6,7 @@
 import sys
 import inspect
 from types import CodeType
+from threading import Lock
 from typing import Callable, Optional, Union
 from importlib import invalidate_caches
 from importlib.util import find_spec
@@ -77,7 +78,7 @@ class PPyPathFinder(PathFinder, Configurable):
 
 class PPyLoader(SourceFileLoader, Configurable):
     _skip_next_get_data = False
-    _in_get_code = False
+    _get_code_lock = Lock()
 
     def get_data(self, filename: str) -> Optional[Union[str, bytes]]:
         if self._skip_next_get_data:
@@ -103,11 +104,8 @@ class PPyLoader(SourceFileLoader, Configurable):
         return code
 
     def get_code(self, fullname: str) -> CodeType:
-        self.__class__._in_get_code = True
-        try:
+        with self._get_code_lock:
             return super().get_code(fullname)
-        finally:
-            self.__class__._in_get_code = False
 
 
 LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS
