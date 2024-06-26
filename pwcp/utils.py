@@ -59,7 +59,11 @@ def py_from_ppy_filename(filename: str) -> str:
 
 
 def import_module_copy(name: str):
+    orig_module = sys.modules.pop(name, None)
     spec = util.find_spec(name)
+    if orig_module:
+        sys.modules[name] = orig_module
+
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
