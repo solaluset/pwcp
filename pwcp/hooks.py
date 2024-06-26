@@ -7,7 +7,7 @@ import sys
 import inspect
 from types import CodeType
 from threading import Lock
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 from importlib import invalidate_caches
 from importlib.util import find_spec
 from importlib.machinery import (
@@ -80,7 +80,7 @@ class PPyLoader(SourceFileLoader, Configurable):
     _skip_next_get_data = False
     _get_code_lock = Lock()
 
-    def get_data(self, filename: str) -> Optional[Union[str, bytes]]:
+    def get_data(self, filename: str) -> Optional[bytes]:
         if self._skip_next_get_data:
             self.__class__._skip_next_get_data = False
             return None
@@ -95,7 +95,7 @@ class PPyLoader(SourceFileLoader, Configurable):
         # save preprocessed file to display actual SyntaxError
         preprocessed_files[self.path] = data
         dependencies[self.path] = deps
-        return data
+        return data.encode()
 
     def source_to_code(self, data: bytes, path: str) -> CodeType:
         code = super().source_to_code(data, path)
