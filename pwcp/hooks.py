@@ -55,21 +55,17 @@ class PPyPathFinder(PathFinder, Configurable):
     original PathFinder
     """
 
-    _skip_find_spec = False
-
     @classmethod
     def find_spec(
         cls, fullname: str, path: Optional[list] = None, target=None
     ):
-        if cls._skip_find_spec:
-            return None
-
         if cls._config.get("prefer_python"):
-            cls._skip_find_spec = True
+            index = sys.meta_path.index(cls)
+            del sys.meta_path[index]
             try:
                 spec = find_spec(fullname)
             finally:
-                cls._skip_find_spec = False
+                sys.meta_path.insert(index, cls)
             if spec:
                 return spec
 
