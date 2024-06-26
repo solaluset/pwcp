@@ -51,9 +51,7 @@ class Configurable:
 
 class PPyPathFinder(PathFinder, Configurable):
     """
-    An overridden PathFinder which will hunt for ppy files in
-    sys.path. Uses storage in this module to avoid conflicts with the
-    original PathFinder
+    An overridden PathFinder which will hunt for ppy files in sys.path
     """
 
     @classmethod
