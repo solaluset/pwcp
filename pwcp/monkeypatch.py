@@ -111,7 +111,7 @@ def patched_classify_pyc(data, name, exc_details):
             check_source or _imp.check_hash_based_pycs == "always"
         ):
             # set skip flag only when our loader is currently working
-            PPyLoader._skip_next_get_data = PPyLoader._in_get_code
+            PPyLoader._skip_next_get_data = PPyLoader._get_code_lock.locked()
 
     return flags
 

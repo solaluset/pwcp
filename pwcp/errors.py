@@ -1,0 +1,2 @@
+class PreprocessorError(Exception):
+    pass

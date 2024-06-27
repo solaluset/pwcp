@@ -4,21 +4,23 @@
 # https://stackoverflow.com/a/48671982/
 
 import sys
-from os import getcwd
+import inspect
 from types import CodeType
+from threading import Lock
 from typing import Callable, Optional
 from importlib import invalidate_caches
-from importlib.util import spec_from_loader
+from importlib.util import find_spec
 from importlib.machinery import (
     BYTECODE_SUFFIXES,
     SOURCE_SUFFIXES,
     FileFinder,
-    PathFinder,
+    PathFinder as _PathFinder,
     SourceFileLoader,
 )
 
 from .config import FILE_EXTENSIONS
 from .preprocessor import preprocess_file
+from .utils import import_module_copy, create_sys_clone
 from .monkeypatch import (
     apply_monkeypatch,
     dependencies,
@@ -26,24 +28,13 @@ from .monkeypatch import (
 )
 
 
-_path_importer_cache = {}
-_path_hooks = []
-
-
-def find_spec_fallback(fullname, path, target):
-    spec = None
-    for finder in sys.meta_path:
-        if finder == PPyPathFinder:
-            continue
-        try:
-            spec = finder.find_spec(fullname, path, target)
-        except AttributeError:
-            loader = finder.find_module(fullname, path)
-            if loader:
-                spec = spec_from_loader(fullname, loader)
-        if spec and spec.loader:
-            return spec
-    return None
+# very hacky way to replace `sys` in the PathFinder with our own module
+# this is done because we need separate `path_hooks` and `path_importer_cache`
+original_pathfinder_module = inspect.getmodule(_PathFinder)
+pathfinder_module = import_module_copy(original_pathfinder_module.__name__)
+PathFinder = pathfinder_module.PathFinder
+vars(pathfinder_module).update(vars(original_pathfinder_module))
+pathfinder_module.sys = create_sys_clone()
 
 
 class Configurable:
@@ -60,49 +51,20 @@ class Configurable:
 
 class PPyPathFinder(PathFinder, Configurable):
     """
-    An overridden PathFinder which will hunt for ppy files in
-    sys.path. Uses storage in this module to avoid conflicts with the
-    original PathFinder
+    An overridden PathFinder which will hunt for ppy files in sys.path
     """
-
-    @classmethod
-    def invalidate_caches(cls):
-        for finder in _path_importer_cache.values():
-            if hasattr(finder, "invalidate_caches"):
-                finder.invalidate_caches()
-
-    @classmethod
-    def _path_hooks(cls, path: str):
-        for hook in _path_hooks:
-            try:
-                return hook(path)
-            except ImportError:
-                continue
-        else:
-            return None
-
-    @classmethod
-    def _path_importer_cache(cls, path: str):
-        if path == "":
-            try:
-                path = getcwd()
-            except FileNotFoundError:
-                # Don't cache the failure as the cwd can easily change to
-                # a valid directory later on.
-                return None
-        try:
-            finder = _path_importer_cache[path]
-        except KeyError:
-            finder = cls._path_hooks(path)
-            _path_importer_cache[path] = finder
-        return finder
 
     @classmethod
     def find_spec(
         cls, fullname: str, path: Optional[list] = None, target=None
     ):
         if cls._config.get("prefer_python"):
-            spec = find_spec_fallback(fullname, path, target)
+            index = sys.meta_path.index(cls)
+            del sys.meta_path[index]
+            try:
+                spec = find_spec(fullname)
+            finally:
+                sys.meta_path.insert(index, cls)
             if spec:
                 return spec
 
@@ -114,14 +76,7 @@ class PPyPathFinder(PathFinder, Configurable):
 
 class PPyLoader(SourceFileLoader, Configurable):
     _skip_next_get_data = False
-    _in_get_code = False
-
-    def __init__(self, fullname: str, path: str):
-        self.fullname = fullname
-        self.path = path
-
-    def get_filename(self, fullname: str) -> str:
-        return self.path
+    _get_code_lock = Lock()
 
     def get_data(self, filename: str) -> Optional[bytes]:
         if self._skip_next_get_data:
@@ -147,11 +102,8 @@ class PPyLoader(SourceFileLoader, Configurable):
         return code
 
     def get_code(self, fullname: str) -> CodeType:
-        self.__class__._in_get_code = True
-        try:
+        with self._get_code_lock:
             return super().get_code(fullname)
-        finally:
-            self.__class__._in_get_code = False
 
 
 LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS
@@ -172,7 +124,9 @@ def _install() -> Callable[[dict], None]:
 
         # insert the path finder
         sys.meta_path.insert(0, PPyPathFinder)
-        _path_hooks.append(FileFinder.path_hook(LOADER_DETAILS))
+        pathfinder_module.sys.path_hooks.append(
+            FileFinder.path_hook(LOADER_DETAILS)
+        )
         # register our extension
         SOURCE_SUFFIXES.extend(FILE_EXTENSIONS)
         # clear any loaders that might already be in use by the FileFinder

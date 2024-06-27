@@ -4,9 +4,10 @@ import warnings
 from typing import Callable, Optional, Type
 from traceback import print_exception
 from types import ModuleType, TracebackType
+from importlib import util
 from importlib.machinery import all_suffixes
 
-from . import preprocessor
+from .errors import PreprocessorError
 
 
 def create_exception_handler(module: Optional[ModuleType]) -> Callable:
@@ -29,9 +30,7 @@ def create_exception_handler(module: Optional[ModuleType]) -> Callable:
             tb = tb.tb_next
         if not tb:
             tb = orig_tb
-            if not isinstance(
-                e, (SyntaxError, preprocessor.PreprocessorError)
-            ):
+            if not isinstance(e, (SyntaxError, PreprocessorError)):
                 print("Internal error:", file=sys.stderr)
         print_exception(e_type, e, tb)
 
@@ -57,3 +56,24 @@ def is_package(module_name: str) -> bool:
 def py_from_ppy_filename(filename: str) -> str:
     file_path = os.path.splitext(filename)[0]
     return file_path + ".py"
+
+
+def import_module_copy(name: str):
+    orig_module = sys.modules.pop(name, None)
+    spec = util.find_spec(name)
+    if orig_module:
+        sys.modules[name] = orig_module
+
+    module = util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    return module
+
+
+def create_sys_clone():
+    sys_clone = ModuleType("sys")
+    vars(sys_clone).update(vars(sys))
+    sys_clone.path_hooks = []
+    sys_clone.path_importer_cache = {}
+
+    return sys_clone

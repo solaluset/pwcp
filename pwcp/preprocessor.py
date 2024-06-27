@@ -6,6 +6,7 @@ from pypp import Preprocessor
 
 from .config import FILE_EXTENSIONS
 from .utils import py_from_ppy_filename
+from .errors import PreprocessorError
 
 
 class PyPreprocessor(Preprocessor):
@@ -29,10 +30,6 @@ class PyPreprocessor(Preprocessor):
     ) -> TextIO:
         self.included_files.append(includepath)
         return super().on_file_open(is_system_include, includepath)
-
-
-class PreprocessorError(Exception):
-    pass
 
 
 def preprocess(src: Union[str, TextIO], p: Optional[PyPreprocessor] = None):
