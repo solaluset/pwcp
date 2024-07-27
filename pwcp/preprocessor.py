@@ -68,7 +68,7 @@ def maybe_preprocess(
         src = src.decode()
     if isinstance(src, str):
         # disable preprocessing of non-ppy files by default
-        if preprocessor is None and not filename.endswith(FILE_EXTENSIONS[0]):
+        if preprocessor is None and not filename.endswith(tuple(FILE_EXTENSIONS)):
             preprocessor = PyPreprocessor(disabled=True)
         # this is essential for interactive mode
         has_newline = src.endswith("\n")
