@@ -7,7 +7,7 @@ import builtins
 import functools
 import linecache
 from io import BytesIO
-from builtins import compile
+from builtins import compile, eval, exec
 from linecache import getlines
 from codeop import Compile, _maybe_compile
 from importlib import _bootstrap_external
@@ -56,6 +56,18 @@ def patched_getlines(filename, module_globals=None):
 def patched_compile(src, filename, *args, **kwargs):
     src = maybe_preprocess(src, filename)
     return compile(src, filename, *args, **kwargs)
+
+
+@functools.wraps(eval)
+def patched_eval(src, *args):
+    src = maybe_preprocess(src, "<string>")
+    return eval(src, *args)
+
+
+@functools.wraps(exec)
+def patched_exec(src, *args, **kwargs):
+    src = maybe_preprocess(src, "<string>")
+    return exec(src, *args, **kwargs)
 
 
 @functools.wraps(_maybe_compile)
@@ -210,6 +222,8 @@ def apply_monkeypatch():
     linecache.getlines = patched_getlines
 
     builtins.compile = patched_compile
+    builtins.eval = patched_eval
+    builtins.exec = patched_exec
     codeop._maybe_compile = patched_maybe_compile
     codeop.Compile = patched_Compile
 
