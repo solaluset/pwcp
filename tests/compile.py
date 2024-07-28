@@ -20,3 +20,10 @@ for func in (str.strip, str.encode, ast.parse):
     namespace = {}
     exec(code_obj, namespace)
     assert namespace["f"]() == 1
+
+for func in (eval, exec):
+    func("""
+#pragma pypp on
+#define a 1
+a
+    """)
