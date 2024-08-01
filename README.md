@@ -2,7 +2,7 @@
 Python with C preprocessor
 
 ## Installation
-`pip install git+https://github.com/solaluset/pwcp`
+`pip install pwcp`
 
 ## Running
 `pwcp <file>`
@@ -13,21 +13,28 @@ Or run built-in `code` module to start interactive console:
 
 `pwcp -m code`
 
+Run `pwcp -h` for more options.
+
 ## Why?
 For fun!
+And for [YABI](https://pypi.org/project/yabi-bython/).
 
 ## How to use it?
 The extension for files that need to be preprocessed is `.ppy` (pre-python).
 You can start by creating `hello.ppy` and putting there something like
 
-    #define hello "Hello "
-    #define world "world!"
-    print(hello world)
+```c
+#define hello "Hello "
+#define world "world!"
+print(hello world)
+```
 
 Then run it
 
-    ~ $ pwcp hello.ppy
-    Hello world!
+```
+~ $ pwcp hello.ppy
+Hello world!
+```
 
 Congratulations! You've run your first program with PWCP.
 
