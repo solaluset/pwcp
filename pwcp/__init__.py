@@ -1,4 +1,4 @@
-__all__ = ("main", "__version__")
+__all__ = ("main", "main_with_params", "__version__")
 
-from .runner import main
+from .runner import main, main_with_params
 from .version import __version__
