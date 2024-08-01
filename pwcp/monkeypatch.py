@@ -44,7 +44,7 @@ def patched_getlines(filename, module_globals=None):
             return getlines(filename, module_globals)
         return content.splitlines()
 
-    if PPyLoader.get_config()["save_files"]:
+    if PPyLoader.save_files:
         py_filename = py_from_ppy_filename(filename)
         if os.path.isfile(py_filename):
             return getlines(py_filename, module_globals)

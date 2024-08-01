@@ -37,28 +37,18 @@ vars(pathfinder_module).update(vars(original_pathfinder_module))
 pathfinder_module.sys = create_sys_clone()
 
 
-class Configurable:
-    _config = {}
-
-    @classmethod
-    def get_config(self) -> dict:
-        return self._config
-
-    @classmethod
-    def set_config(cls, config: dict):
-        cls._config = config
-
-
-class PPyPathFinder(PathFinder, Configurable):
+class PPyPathFinder(PathFinder):
     """
     An overridden PathFinder which will hunt for ppy files in sys.path
     """
+
+    prefer_python = False
 
     @classmethod
     def find_spec(
         cls, fullname: str, path: Optional[list] = None, target=None
     ):
-        if cls._config.get("prefer_python"):
+        if cls.prefer_python:
             index = sys.meta_path.index(cls)
             del sys.meta_path[index]
             try:
@@ -74,7 +64,8 @@ class PPyPathFinder(PathFinder, Configurable):
         return None
 
 
-class PPyLoader(SourceFileLoader, Configurable):
+class PPyLoader(SourceFileLoader):
+    save_files = False
     _skip_next_get_data = False
     _get_code_lock = Lock()
 
@@ -89,7 +80,7 @@ class PPyLoader(SourceFileLoader, Configurable):
 
         # indicate that we started preprocessing
         preprocessed_files[self.path] = None
-        data, deps = preprocess_file(self.path, self._config)
+        data, deps = preprocess_file(self.path, self.save_files)
         # save preprocessed file to display actual SyntaxError
         preprocessed_files[self.path] = data
         dependencies[self.path] = deps
@@ -109,15 +100,15 @@ class PPyLoader(SourceFileLoader, Configurable):
 LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS
 
 
-def _install() -> Callable[[dict], None]:
+def _install() -> Callable[..., None]:
     done = False
 
-    def install(config: dict = {}):
+    def install(*, save_files: bool, prefer_python: bool):
         nonlocal done
 
         # (re)setting global configuration
-        PPyLoader.set_config(config)
-        PPyPathFinder.set_config(config)
+        PPyLoader.save_files = save_files
+        PPyPathFinder.prefer_python = prefer_python
 
         if done:
             return
