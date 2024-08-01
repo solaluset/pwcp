@@ -2,7 +2,7 @@
 Python with C preprocessor
 
 ## Installation
-`pip install git+https://github.com/solaluset/pwcp`
+`pip install pwcp`
 
 ## Running
 `pwcp <file>`
