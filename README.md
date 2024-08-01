@@ -13,6 +13,8 @@ Or run built-in `code` module to start interactive console:
 
 `pwcp -m code`
 
+Run `pwcp -h` for more options.
+
 ## Why?
 For fun!
 And for [YABI](https://pypi.org/project/yabi-bython/).
