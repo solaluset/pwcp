@@ -20,14 +20,18 @@ For fun!
 The extension for files that need to be preprocessed is `.ppy` (pre-python).
 You can start by creating `hello.ppy` and putting there something like
 
-    #define hello "Hello "
-    #define world "world!"
-    print(hello world)
+```c
+#define hello "Hello "
+#define world "world!"
+print(hello world)
+```
 
 Then run it
 
-    ~ $ pwcp hello.ppy
-    Hello world!
+```
+~ $ pwcp hello.ppy
+Hello world!
+```
 
 Congratulations! You've run your first program with PWCP.
 
