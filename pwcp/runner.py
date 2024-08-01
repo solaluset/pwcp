@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+from typing import Iterable
 from importlib import util
 from importlib.machinery import SourceFileLoader
 
@@ -21,28 +22,34 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "--version", action="version", version="pwcp " + __version__
 )
+parser.add_argument("-m", action="store_true", help="run target as module")
 parser.add_argument(
     "--prefer-py",
     dest="prefer_python",
     action="store_true",
-    help="Prefer .py files over .ppy when importing.",
+    help="prefer .py files over .ppy when importing",
 )
 parser.add_argument(
     "--save-files",
     dest="save_files",
     action="store_true",
-    help="Save .ppy files to .py after preprocessing.",
+    help="save .ppy files to .py after preprocessing",
 )
-parser.add_argument("-m", action="store_true", help="Run target as module")
 parser.add_argument("target")
 parser.add_argument("args", nargs=argparse.ZERO_OR_MORE)
 
 
-def main(args=sys.argv[1:]):
-    args = parser.parse_args(args)
-    hooks.install(vars(args))
-    if not args.m:
-        filename: str = os.path.abspath(args.target)
+def main_with_params(
+    *,
+    target: str,
+    args: Iterable[str],
+    m: bool,
+    prefer_python: bool,
+    save_files: bool,
+):
+    hooks.install(prefer_python=prefer_python, save_files=save_files)
+    if not m:
+        filename: str = os.path.abspath(target)
         sys.path.insert(0, os.path.dirname(filename))
         if filename.endswith(tuple(FILE_EXTENSIONS)):
             loader = hooks.PPyLoader
@@ -55,11 +62,11 @@ def main(args=sys.argv[1:]):
         vars_override = {"__package__": None}
     else:
         sys.path.insert(0, os.getcwd())
-        if is_package(args.target):
-            args.target += ".__main__"
-        spec = util.find_spec(args.target)
+        if is_package(target):
+            target += ".__main__"
+        spec = util.find_spec(target)
         if spec is None:
-            print("No module named " + args.target)
+            print("No module named " + target)
             return
         spec.loader.name = "__main__"
         vars_override = {"__name__": "__main__"}
@@ -70,12 +77,17 @@ def main(args=sys.argv[1:]):
     orig_argv = sys.argv.copy()
     sys.argv.clear()
     sys.argv.append(module.__file__)
-    sys.argv.extend(args.args)
+    sys.argv.extend(args)
 
     spec.loader.exec_module(module)
 
     sys.argv.clear()
     sys.argv.extend(orig_argv)
+
+
+def main(args=sys.argv[1:]):
+    args = parser.parse_args(args)
+    main_with_params(**vars(args))
 
 
 if __name__ == "__main__":

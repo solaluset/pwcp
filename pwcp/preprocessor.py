@@ -52,10 +52,12 @@ def preprocess(src: Union[str, TextIO], p: Optional[PyPreprocessor] = None):
     return out.getvalue(), p.included_files
 
 
-def preprocess_file(filename: str, config: dict = {}) -> Tuple[str, list]:
+def preprocess_file(
+    filename: str, save_files: bool = False
+) -> Tuple[str, list]:
     with open(filename) as f:
         res, deps = preprocess(f)
-    if config.get("save_files"):
+    if save_files:
         with open(py_from_ppy_filename(filename), "w") as f:
             f.write(res)
     return res, deps
@@ -68,7 +70,9 @@ def maybe_preprocess(
         src = src.decode()
     if isinstance(src, str):
         # disable preprocessing of non-ppy files by default
-        if preprocessor is None and not filename.endswith(tuple(FILE_EXTENSIONS)):
+        if preprocessor is None and not filename.endswith(
+            tuple(FILE_EXTENSIONS)
+        ):
             preprocessor = PyPreprocessor(disabled=True)
         # this is essential for interactive mode
         has_newline = src.endswith("\n")
