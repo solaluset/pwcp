@@ -15,6 +15,7 @@ Or run built-in `code` module to start interactive console:
 
 ## Why?
 For fun!
+And for [YABI](https://pypi.org/project/yabi-bython/).
 
 ## How to use it?
 The extension for files that need to be preprocessed is `.ppy` (pre-python).
