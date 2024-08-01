@@ -22,19 +22,19 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "--version", action="version", version="pwcp " + __version__
 )
+parser.add_argument("-m", action="store_true", help="run target as module")
 parser.add_argument(
     "--prefer-py",
     dest="prefer_python",
     action="store_true",
-    help="Prefer .py files over .ppy when importing.",
+    help="prefer .py files over .ppy when importing",
 )
 parser.add_argument(
     "--save-files",
     dest="save_files",
     action="store_true",
-    help="Save .ppy files to .py after preprocessing.",
+    help="save .ppy files to .py after preprocessing",
 )
-parser.add_argument("-m", action="store_true", help="Run target as module")
 parser.add_argument("target")
 parser.add_argument("args", nargs=argparse.ZERO_OR_MORE)
 
