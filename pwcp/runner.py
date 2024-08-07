@@ -35,6 +35,13 @@ parser.add_argument(
     action="store_true",
     help="save .ppy files to .py after preprocessing",
 )
+parser.add_argument(
+    "--preprocess-unknown-sources",
+    dest="preprocess_unknown_sources",
+    action="store_true",
+    help="preprocess code even if filename is unknown"
+    " (for example, in exec call)",
+)
 parser.add_argument("target")
 parser.add_argument("args", nargs=argparse.ZERO_OR_MORE)
 
@@ -46,8 +53,13 @@ def main_with_params(
     m: bool,
     prefer_python: bool,
     save_files: bool,
+    preprocess_unknown_sources: bool,
 ):
-    hooks.install(prefer_python=prefer_python, save_files=save_files)
+    hooks.install(
+        prefer_python=prefer_python,
+        save_files=save_files,
+        preprocess_unknown_sources=preprocess_unknown_sources,
+    )
     if not m:
         filename: str = os.path.abspath(target)
         sys.path.insert(0, os.path.dirname(filename))

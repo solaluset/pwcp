@@ -1,5 +1,6 @@
 from io import StringIO
 from linecache import getline
+from importlib.machinery import SOURCE_SUFFIXES
 from typing import Any, Optional, TextIO, Tuple, Union
 
 from pypp import Preprocessor
@@ -9,8 +10,15 @@ from .utils import py_from_ppy_filename
 from .errors import PreprocessorError
 
 
+preprocessed_files = {}
+
+
 class PyPreprocessor(Preprocessor):
-    def __init__(self, disabled=False):
+    default_disabled = True
+
+    def __init__(self, disabled: Optional[bool] = None):
+        if disabled is None:
+            disabled = self.default_disabled
         super().__init__(disabled=disabled)
         self.included_files = []
 
@@ -32,10 +40,24 @@ class PyPreprocessor(Preprocessor):
         return super().on_file_open(is_system_include, includepath)
 
 
-def preprocess(src: Union[str, TextIO], p: Optional[PyPreprocessor] = None):
+def preprocess(
+    src: Union[str, TextIO], filename: str, p: Optional[PyPreprocessor] = None
+):
     if p is None:
-        p = PyPreprocessor()
-    p.parse(src)
+        # always enable preprocessing of ppy files
+        if filename.endswith(tuple(FILE_EXTENSIONS)):
+            disabled = False
+        # but disable other Python files
+        elif filename.endswith(tuple(SOURCE_SUFFIXES)):
+            disabled = True
+        else:
+            disabled = None
+        p = PyPreprocessor(disabled=disabled)
+
+    # indicate that we started preprocessing
+    preprocessed_files[filename] = None
+
+    p.parse(src, filename)
     out = StringIO()
     try:
         p.write(out)
@@ -49,14 +71,17 @@ def preprocess(src: Union[str, TextIO], p: Optional[PyPreprocessor] = None):
         raise PreprocessorError(msg) from e
     if p.return_code != 0:
         raise PreprocessorError("preprocessor exit code is not zero")
-    return out.getvalue(), p.included_files
+
+    # save preprocessed file to display actual SyntaxError
+    result = preprocessed_files[filename] = out.getvalue()
+    return result, p.included_files
 
 
 def preprocess_file(
     filename: str, save_files: bool = False
 ) -> Tuple[str, list]:
     with open(filename) as f:
-        res, deps = preprocess(f)
+        res, deps = preprocess(f, filename)
     if save_files:
         with open(py_from_ppy_filename(filename), "w") as f:
             f.write(res)
@@ -69,14 +94,9 @@ def maybe_preprocess(
     if isinstance(src, bytes):
         src = src.decode()
     if isinstance(src, str):
-        # disable preprocessing of non-ppy files by default
-        if preprocessor is None and not filename.endswith(
-            tuple(FILE_EXTENSIONS)
-        ):
-            preprocessor = PyPreprocessor(disabled=True)
         # this is essential for interactive mode
         has_newline = src.endswith("\n")
-        src, _ = preprocess(src, preprocessor)
+        src, _ = preprocess(src, filename, preprocessor)
         if not has_newline:
             src = src.rstrip("\n")
     return src
