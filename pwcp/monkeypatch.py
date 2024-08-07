@@ -19,12 +19,11 @@ from importlib._bootstrap_external import (
     _validate_hash_pyc,
 )
 
-from .preprocessor import PyPreprocessor, maybe_preprocess
+from .preprocessor import PyPreprocessor, maybe_preprocess, preprocessed_files
 from .config import FILE_EXTENSIONS
 from .utils import py_from_ppy_filename
 
 
-preprocessed_files = {}
 dependencies = {}
 
 BYTECODE_HEADER_LENGTH = 16

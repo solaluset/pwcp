@@ -24,7 +24,6 @@ from .utils import import_module_copy, create_sys_clone
 from .monkeypatch import (
     apply_monkeypatch,
     dependencies,
-    preprocessed_files,
 )
 
 
@@ -78,12 +77,9 @@ class PPyLoader(SourceFileLoader):
             with open(filename, "rb") as f:
                 return f.read()
 
-        # indicate that we started preprocessing
-        preprocessed_files[self.path] = None
         data, deps = preprocess_file(self.path, self.save_files)
-        # save preprocessed file to display actual SyntaxError
-        preprocessed_files[self.path] = data
         dependencies[self.path] = deps
+
         return data.encode()
 
     def source_to_code(self, data: bytes, path: str) -> CodeType:

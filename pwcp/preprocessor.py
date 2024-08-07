@@ -9,6 +9,9 @@ from .utils import py_from_ppy_filename
 from .errors import PreprocessorError
 
 
+preprocessed_files = {}
+
+
 class PyPreprocessor(Preprocessor):
     def __init__(self, disabled=False):
         super().__init__(disabled=disabled)
@@ -37,6 +40,10 @@ def preprocess(
 ):
     if p is None:
         p = PyPreprocessor()
+
+    # indicate that we started preprocessing
+    preprocessed_files[filename] = None
+
     p.parse(src, filename)
     out = StringIO()
     try:
@@ -51,7 +58,10 @@ def preprocess(
         raise PreprocessorError(msg) from e
     if p.return_code != 0:
         raise PreprocessorError("preprocessor exit code is not zero")
-    return out.getvalue(), p.included_files
+
+    # save preprocessed file to display actual SyntaxError
+    result = preprocessed_files[filename] = out.getvalue()
+    return result, p.included_files
 
 
 def preprocess_file(
