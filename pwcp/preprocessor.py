@@ -1,5 +1,6 @@
 from io import StringIO
 from linecache import getline
+from importlib.machinery import SOURCE_SUFFIXES
 from typing import Any, Optional, TextIO, Tuple, Union
 
 from pypp import Preprocessor
@@ -44,11 +45,14 @@ def preprocess(
 ):
     if p is None:
         # always enable preprocessing of ppy files
-        p = PyPreprocessor(
-            disabled=(
-                False if filename.endswith(tuple(FILE_EXTENSIONS)) else None
-            )
-        )
+        if filename.endswith(tuple(FILE_EXTENSIONS)):
+            disabled = False
+        # but disable other Python files
+        elif filename.endswith(tuple(SOURCE_SUFFIXES)):
+            disabled = True
+        else:
+            disabled = None
+        p = PyPreprocessor(disabled=disabled)
 
     # indicate that we started preprocessing
     preprocessed_files[filename] = None
