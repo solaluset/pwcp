@@ -1,7 +1,7 @@
 from io import StringIO
 from linecache import getline
 from importlib.machinery import SOURCE_SUFFIXES
-from typing import Any, Optional, TextIO, Tuple, Union
+from typing import Any, Callable, Optional, TextIO, Tuple, TypeAlias, Union
 
 from pypp import Preprocessor
 
@@ -40,6 +40,9 @@ class PyPreprocessor(Preprocessor):
         return super().on_file_open(is_system_include, includepath)
 
 
+PreprocessingFunction: TypeAlias = Callable[[str, str, PyPreprocessor], str]
+
+
 def _preprocess(src: str, filename: str, preprocessor: PyPreprocessor) -> str:
     preprocessor.parse(src, filename)
 
@@ -61,6 +64,15 @@ def _preprocess(src: str, filename: str, preprocessor: PyPreprocessor) -> str:
         )
 
     return out.getvalue()
+
+
+def set_preprocessing_function(func: PreprocessingFunction) -> PreprocessingFunction:
+    global _preprocess
+
+    prev_func = _preprocess
+    _preprocess = func
+
+    return prev_func
 
 
 def preprocess(
