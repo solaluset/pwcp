@@ -40,9 +40,35 @@ class PyPreprocessor(Preprocessor):
         return super().on_file_open(is_system_include, includepath)
 
 
+def _preprocess(src: str, filename: str, preprocessor: PyPreprocessor) -> str:
+    preprocessor.parse(src, filename)
+
+    out = StringIO()
+    try:
+        preprocessor.write(out)
+    except SyntaxError:
+        raise
+    except Exception as e:
+        msg = "internal preprocessor error"
+        last = preprocessor.lastdirective
+        if last:
+            msg += f" at around {last.source}:{last.lineno}"
+        raise PreprocessorError(msg) from e
+
+    if preprocessor.return_code != 0:
+        raise PreprocessorError(
+            f"preprocessor exit code is not zero: {preprocessor.return_code}"
+        )
+
+    return out.getvalue()
+
+
 def preprocess(
     src: Union[str, TextIO], filename: str, p: Optional[PyPreprocessor] = None
 ):
+    if not isinstance(src, str):
+        src = src.read()
+
     if p is None:
         # always enable preprocessing of ppy files
         if filename.endswith(tuple(FILE_EXTENSIONS)):
@@ -57,23 +83,8 @@ def preprocess(
     # indicate that we started preprocessing
     preprocessed_files[filename] = None
 
-    p.parse(src, filename)
-    out = StringIO()
-    try:
-        p.write(out)
-    except SyntaxError:
-        raise
-    except Exception as e:
-        msg = "internal preprocessor error"
-        last = p.lastdirective
-        if last:
-            msg += f" at around {last.source}:{last.lineno}"
-        raise PreprocessorError(msg) from e
-    if p.return_code != 0:
-        raise PreprocessorError("preprocessor exit code is not zero")
-
     # save preprocessed file to display actual SyntaxError
-    result = preprocessed_files[filename] = out.getvalue()
+    result = preprocessed_files[filename] = _preprocess(src, filename, p)
     return result, p.included_files
 
 
