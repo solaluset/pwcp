@@ -32,10 +32,12 @@ class PyPreprocessor(Preprocessor):
         return super().on_file_open(is_system_include, includepath)
 
 
-def preprocess(src: Union[str, TextIO], p: Optional[PyPreprocessor] = None):
+def preprocess(
+    src: Union[str, TextIO], filename: str, p: Optional[PyPreprocessor] = None
+):
     if p is None:
         p = PyPreprocessor()
-    p.parse(src)
+    p.parse(src, filename)
     out = StringIO()
     try:
         p.write(out)
@@ -56,7 +58,7 @@ def preprocess_file(
     filename: str, save_files: bool = False
 ) -> Tuple[str, list]:
     with open(filename) as f:
-        res, deps = preprocess(f)
+        res, deps = preprocess(f, filename)
     if save_files:
         with open(py_from_ppy_filename(filename), "w") as f:
             f.write(res)
@@ -76,7 +78,7 @@ def maybe_preprocess(
             preprocessor = PyPreprocessor(disabled=True)
         # this is essential for interactive mode
         has_newline = src.endswith("\n")
-        src, _ = preprocess(src, preprocessor)
+        src, _ = preprocess(src, filename, preprocessor)
         if not has_newline:
             src = src.rstrip("\n")
     return src
