@@ -19,7 +19,7 @@ from importlib.machinery import (
 )
 
 from .config import FILE_EXTENSIONS
-from .preprocessor import preprocess_file
+from .preprocessor import PyPreprocessor, preprocess_file
 from .utils import import_module_copy, create_sys_clone
 from .monkeypatch import (
     apply_monkeypatch,
@@ -99,12 +99,18 @@ LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS
 def _install() -> Callable[..., None]:
     done = False
 
-    def install(*, save_files: bool, prefer_python: bool):
+    def install(
+        *,
+        save_files: bool,
+        prefer_python: bool,
+        preprocess_unknown_sources: bool,
+    ):
         nonlocal done
 
         # (re)setting global configuration
         PPyLoader.save_files = save_files
         PPyPathFinder.prefer_python = prefer_python
+        PyPreprocessor.default_disabled = not preprocess_unknown_sources
 
         if done:
             return
