@@ -13,7 +13,11 @@ preprocessed_files = {}
 
 
 class PyPreprocessor(Preprocessor):
-    def __init__(self, disabled=False):
+    default_disabled = True
+
+    def __init__(self, disabled: Optional[bool] = None):
+        if disabled is None:
+            disabled = self.default_disabled
         super().__init__(disabled=disabled)
         self.included_files = []
 
@@ -39,7 +43,12 @@ def preprocess(
     src: Union[str, TextIO], filename: str, p: Optional[PyPreprocessor] = None
 ):
     if p is None:
-        p = PyPreprocessor()
+        # always enable preprocessing of ppy files
+        p = PyPreprocessor(
+            disabled=(
+                False if filename.endswith(tuple(FILE_EXTENSIONS)) else None
+            )
+        )
 
     # indicate that we started preprocessing
     preprocessed_files[filename] = None
@@ -81,11 +90,6 @@ def maybe_preprocess(
     if isinstance(src, bytes):
         src = src.decode()
     if isinstance(src, str):
-        # disable preprocessing of non-ppy files by default
-        if preprocessor is None and not filename.endswith(
-            tuple(FILE_EXTENSIONS)
-        ):
-            preprocessor = PyPreprocessor(disabled=True)
         # this is essential for interactive mode
         has_newline = src.endswith("\n")
         src, _ = preprocess(src, filename, preprocessor)
