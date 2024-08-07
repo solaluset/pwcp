@@ -82,7 +82,7 @@ def test_error_directive():
     assert (
         ctx.value.output.splitlines()[-1].strip()
         == b"pwcp.errors.PreprocessorError:"
-        b" preprocessor exit code is not zero"
+        b" preprocessor exit code is not zero: 1"
     )
 
 
