@@ -106,7 +106,7 @@ f()
     with patch("sys.stdin", new=StringIO(code)), patch(
         "sys.stdout", new=StringIO()
     ):
-        main(["-m", "code"])
+        main(["--preprocess-unknown-sources", "-m", "code"])
         assert (
             sys.stdout.getvalue()
             == sys.ps1 * 2
@@ -131,7 +131,7 @@ print(1)
     with patch("sys.stdin", new=StringIO(code)), patch(
         "sys.stdout", new=StringIO()
     ):
-        main(["-m", "code"])
+        main(["--preprocess-unknown-sources", "-m", "code"])
         assert sys.stdout.getvalue() == sys.ps1 + sys.ps2 * 3 + "1\n" + sys.ps1
 
 
