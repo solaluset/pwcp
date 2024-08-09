@@ -165,6 +165,8 @@ def test_bytecode_caching(patched_strftime):
             main(["tests/bytecode_test.ppy"])
             assert sys.stdout.getvalue() == hello1_full
 
+        time.sleep(0.01)
+
         with open("tests/bytecode_test.pyh", "w") as f:
             f.write(f"#define HELLO {hello2!r}")
 
