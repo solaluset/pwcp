@@ -128,7 +128,7 @@ def patched_classify_pyc(data, name, exc_details):
 
 
 def _get_file_mtime(file: str) -> int:
-    return int(os.stat(file).st_mtime)
+    return os.stat(file).st_mtime_ns
 
 
 @functools.wraps(_code_to_timestamp_pyc)

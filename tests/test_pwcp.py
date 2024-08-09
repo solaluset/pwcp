@@ -139,7 +139,8 @@ def test_overriden_compile():
     main(["tests/compile.py"])
 
 
-def test_bytecode_caching():
+@patch("time.strftime")
+def test_bytecode_caching(patched_strftime):
     sys.dont_write_bytecode = False
     try:
         hello1 = "Hello, this file was cached at "
@@ -147,6 +148,8 @@ def test_bytecode_caching():
 
         with open("tests/bytecode_test.pyh", "w") as f:
             f.write(f"#define HELLO {hello1!r} __TIME__")
+
+        patched_strftime.return_value = "10:10:10"
 
         time_str = time.strftime("%H:%M:%S")
         hello1_full = hello1 + time_str + "\n"
@@ -156,7 +159,7 @@ def test_bytecode_caching():
             main(["tests/bytecode_test.ppy"])
             assert sys.stdout.getvalue() == hello1_full
 
-        time.sleep(1.1)
+        patched_strftime.return_value = "20:20:20"
 
         with patch("sys.stdout", new=StringIO()):
             main(["tests/bytecode_test.ppy"])
