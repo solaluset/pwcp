@@ -28,7 +28,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install packages
-      run: pip install '.[tests]' && pip install git+https://github.com/solaluset/pytest
+      run: pip install '.[tests]' && pip install git+https://github.com/solaluset/pytest || true
 
     - name: Test
       run: pwcp --version && pytest
