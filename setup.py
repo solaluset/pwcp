@@ -27,5 +27,4 @@ setuptools.setup = patched_setup
 ppsetuptools.setup(
     version=__version__,
     packages=["pwcp"],
-    license="MIT" if sys.version_info >= (3, 9) else None,
 )
