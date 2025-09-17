@@ -1,7 +1,8 @@
-import argparse
 import os
 import sys
+import argparse
 from typing import Iterable
+from functools import partial
 from importlib import util
 from importlib.machinery import SourceFileLoader
 
@@ -23,19 +24,23 @@ parser.add_argument(
     "--version", action="version", version="pwcp " + __version__
 )
 parser.add_argument("-m", action="store_true", help="run target as module")
+parser.add_argument("-c", action="store_true", help="run target as command line")
 parser.add_argument(
+    "--PP",
     "--prefer-py",
     dest="prefer_python",
     action="store_true",
     help="prefer .py files over .ppy when importing",
 )
 parser.add_argument(
+    "--SF",
     "--save-files",
     dest="save_files",
     action="store_true",
     help="save .ppy files to .py after preprocessing",
 )
 parser.add_argument(
+    "--PUS",
     "--preprocess-unknown-sources",
     dest="preprocess_unknown_sources",
     action="store_true",
@@ -51,6 +56,7 @@ def main_with_params(
     target: str,
     args: Iterable[str],
     m: bool,
+    c: bool,
     prefer_python: bool,
     save_files: bool,
     preprocess_unknown_sources: bool,
@@ -61,12 +67,18 @@ def main_with_params(
         preprocess_unknown_sources=preprocess_unknown_sources,
     )
     if not m:
-        filename: str = os.path.abspath(target)
-        sys.path.insert(0, os.path.dirname(filename))
-        if filename.endswith(tuple(FILE_EXTENSIONS)):
-            loader = hooks.PPyLoader
+        filename: str
+        if not c:
+            filename = os.path.abspath(target)
+            sys.path.insert(0, os.path.dirname(filename))
+            if filename.endswith(tuple(FILE_EXTENSIONS)):
+                loader = hooks.PPyLoader
+            else:
+                loader = SourceFileLoader
         else:
-            loader = SourceFileLoader
+            sys.path.insert(0, os.getcwd())
+            filename = "-c"
+            loader = partial(hooks.PPyLoader, command_line=target)
         spec = util.spec_from_loader(
             "__main__",
             loader("__main__", filename),
@@ -95,6 +107,7 @@ def main_with_params(
 
     sys.argv.clear()
     sys.argv.extend(orig_argv)
+    del sys.path[0]
 
 
 def main(args=sys.argv[1:]):

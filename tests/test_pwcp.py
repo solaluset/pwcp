@@ -35,6 +35,12 @@ def test_run_module():
         assert sys.stdout.getvalue() == "tests.a_module.b = 6\n"
 
 
+def test_run_command():
+    with patch("sys.stdout", new=StringIO()):
+        main(["--preprocess-unknown-sources", "-c", "print(__LINE__)"])
+        assert sys.stdout.getvalue() == "1\n"
+
+
 def test_comments():
     main(["tests/comments.ppy"])
 
