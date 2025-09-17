@@ -1,4 +1,6 @@
+import os
 import sys
+import shutil
 
 import setuptools
 import ppsetuptools
@@ -8,6 +10,9 @@ sys.path.append("pwcp")
 from version import __version__  # noqa: E402
 
 del sys.path[-1]
+
+here = os.path.abspath(os.path.dirname(__file__))
+shutil.copy2(os.path.join(here, "LICENSE.md"), os.path.join(here, "pwcp"))
 
 
 def patched_setup(*args, **kwargs):
