@@ -14,5 +14,8 @@ scripts = {pwcp = "pwcp:main"}
 [tool.setuptools]
 packages = ["pwcp"]
 
+[tool.setuptools.package-data]
+pwcp = ["LICENSE.md"]
+
 [tool.setuptools.dynamic]
 version = {attr = "pwcp.version.__version__"}
