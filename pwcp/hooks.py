@@ -19,7 +19,7 @@ from importlib.machinery import (
 )
 
 from .config import FILE_EXTENSIONS
-from .preprocessor import PyPreprocessor, preprocess_file
+from .preprocessor import PyPreprocessor, preprocess, preprocess_file
 from .utils import import_module_copy, create_sys_clone
 from .monkeypatch import (
     apply_monkeypatch,
@@ -68,10 +68,17 @@ class PPyLoader(SourceFileLoader):
     _skip_next_get_data = False
     _get_code_lock = Lock()
 
+    def __init__(self, fullname: str, path: str, *, command_line: Optional[str] = None) -> None:
+        super().__init__(fullname, path)
+        self.command_line = command_line
+
     def get_data(self, filename: str) -> Optional[bytes]:
-        if self._skip_next_get_data:
+        if self.__class__._skip_next_get_data:
             self.__class__._skip_next_get_data = False
             return None
+
+        if filename == "-c":
+            return preprocess(self.command_line, filename)[0].encode()
 
         if filename.endswith(tuple(BYTECODE_SUFFIXES)):
             with open(filename, "rb") as f:
