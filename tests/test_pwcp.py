@@ -112,20 +112,22 @@ f()
     with patch("sys.stdin", new=StringIO(code)), patch(
         "sys.stdout", new=StringIO()
     ):
+        ps1 = getattr(sys, "ps1", ">>> ")
+        ps2 = getattr(sys, "ps2", "... ")
         main(["--preprocess-unknown-sources", "-m", "code"])
         assert (
             sys.stdout.getvalue()
-            == sys.ps1 * 2
-            + sys.ps2 * 2
-            + sys.ps1
-            + sys.ps2 * 2
+            == ps1 * 2
+            + ps2 * 2
+            + ps1
+            + ps2 * 2
             + repr(s)
             + "\n"
-            + sys.ps1
-            + sys.ps2 * 6
-            + sys.ps1
+            + ps1
+            + ps2 * 6
+            + ps1
             + "1\n"
-            + sys.ps1
+            + ps1
         )
 
     code = """
@@ -138,7 +140,7 @@ print(1)
         "sys.stdout", new=StringIO()
     ):
         main(["--preprocess-unknown-sources", "-m", "code"])
-        assert sys.stdout.getvalue() == sys.ps1 + sys.ps2 * 3 + "1\n" + sys.ps1
+        assert sys.stdout.getvalue() == ps1 + ps2 * 3 + "1\n" + ps1
 
 
 def test_overriden_compile():
