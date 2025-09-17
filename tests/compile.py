@@ -22,8 +22,10 @@ for func in (str.strip, str.encode, ast.parse):
     assert namespace["f"]() == 1
 
 for func in (eval, exec):
-    func("""
+    func(
+        """
 #pragma pypp on
 #define a 1
 a
-    """)
+    """
+    )
