@@ -26,18 +26,21 @@ parser.add_argument(
 parser.add_argument("-m", action="store_true", help="run target as module")
 parser.add_argument("-c", action="store_true", help="run target as command line")
 parser.add_argument(
+    "--PP",
     "--prefer-py",
     dest="prefer_python",
     action="store_true",
     help="prefer .py files over .ppy when importing",
 )
 parser.add_argument(
+    "--SF",
     "--save-files",
     dest="save_files",
     action="store_true",
     help="save .ppy files to .py after preprocessing",
 )
 parser.add_argument(
+    "--PUS",
     "--preprocess-unknown-sources",
     dest="preprocess_unknown_sources",
     action="store_true",
