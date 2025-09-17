@@ -15,8 +15,6 @@ def patched_setup(*args, **kwargs):
     kwargs["entry_points"] = {
         "console_scripts": [f"{k}={v}" for k, v in scripts.items()]
     }
-    if sys.version_info < (3, 9):
-        kwargs["license"] = {"file": "LICENSE.md"}
     setup(*args, **{k: v for k, v in kwargs.items() if v is not None})
 
 
@@ -24,4 +22,5 @@ setuptools.setup = patched_setup
 ppsetuptools.setup(
     version=__version__,
     packages=["pwcp"],
+    license="MIT" if sys.version_info >= (3, 9) else {"file": "LICENSE.md"},
 )
