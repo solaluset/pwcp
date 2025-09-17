@@ -15,6 +15,8 @@ def patched_setup(*args, **kwargs):
     kwargs["entry_points"] = {
         "console_scripts": [f"{k}={v}" for k, v in scripts.items()]
     }
+    if sys.version_info < (3, 9):
+        kwargs["license"] = {"file": kwargs["license-files"][0]}
     setup(*args, **{k: v for k, v in kwargs.items() if v is not None})
 
 
