@@ -5,6 +5,8 @@ requires = ["ppsetuptools", "wheel"]
 name = "pwcp"
 description = "Python with C preprocessor"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.md"]
 requires-python = ">= 3.7"
 dependencies = ["pypp-for-pwcp==1.33b5"]
 optional-dependencies = {tests = ["pytest"]}
