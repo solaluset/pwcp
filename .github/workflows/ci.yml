@@ -14,7 +14,8 @@ jobs:
           - "3.10"
           - "3.11"
           - "3.12"
-          - "3.13-dev"
+          - "3.13"
+          - "3.14-dev"
           - "pypy-3.7"
           - "pypy-3.8"
           - "pypy-3.9"
@@ -27,7 +28,22 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install packages
-      run: pip install '.[tests]'
+      run: pip install '.[tests]' && pip install git+https://github.com/solaluset/pytest || true
 
     - name: Test
       run: pwcp --version && pytest
+
+  Check:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Install packages
+      run: pip install pre-commit
+
+    - name: Check
+      run: pre-commit run --all

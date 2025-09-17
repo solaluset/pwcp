@@ -68,7 +68,9 @@ class PPyLoader(SourceFileLoader):
     _skip_next_get_data = False
     _get_code_lock = Lock()
 
-    def __init__(self, fullname: str, path: str, *, command_line: Optional[str] = None) -> None:
+    def __init__(
+        self, fullname: str, path: str, *, command_line: Optional[str] = None
+    ) -> None:
         super().__init__(fullname, path)
         self.command_line = command_line
 

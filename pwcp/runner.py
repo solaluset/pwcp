@@ -24,7 +24,9 @@ parser.add_argument(
     "--version", action="version", version="pwcp " + __version__
 )
 parser.add_argument("-m", action="store_true", help="run target as module")
-parser.add_argument("-c", action="store_true", help="run target as command line")
+parser.add_argument(
+    "-c", action="store_true", help="run target as command line"
+)
 parser.add_argument(
     "--PP",
     "--prefer-py",
