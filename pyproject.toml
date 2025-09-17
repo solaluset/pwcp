@@ -1,9 +1,5 @@
 [build-system]
-requires = [
-    "setuptools >= 77.0.3",
-    "ppsetuptools",
-    "wheel",
-]
+requires = ["ppsetuptools", "wheel"]
 
 [project]
 name = "pwcp"
