@@ -1,21 +1,20 @@
 [build-system]
-requires = ["ppsetuptools", "wheel"]
+requires = ["hatchling", "wheel"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pwcp"
 description = "Python with C preprocessor"
 readme = "README.md"
+license = "MIT"
 requires-python = ">= 3.7"
 dependencies = ["pypp-for-pwcp==1.33b5"]
 optional-dependencies = {tests = ["pytest"]}
 dynamic = ["version"]
 scripts = {pwcp = "pwcp:main"}
 
-[tool.setuptools]
+[tool.hatch.build.targets.wheel]
 packages = ["pwcp"]
 
-[tool.setuptools.package-data]
-pwcp = ["LICENSE.md"]
-
-[tool.setuptools.dynamic]
-version = {attr = "pwcp.version.__version__"}
+[tool.hatch.version]
+path = "pwcp/version.py"
