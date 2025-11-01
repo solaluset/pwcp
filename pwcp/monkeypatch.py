@@ -27,6 +27,7 @@ dependencies = {}
 
 BYTECODE_HEADER_LENGTH = 16
 BYTECODE_SIZE_LENGTH = 4
+RAW_MAGIC_NUMBER = int.from_bytes(_bootstrap_external.MAGIC_NUMBER, "little")
 
 
 @functools.wraps(getlines)
@@ -156,9 +157,7 @@ def patched_validate_timestamp_pyc(
 
 def _get_file_hash(file):
     with open(file, "rb") as f:
-        return patched_source_hash(
-            _bootstrap_external._RAW_MAGIC_NUMBER, f.read()
-        )
+        return patched_source_hash(RAW_MAGIC_NUMBER, f.read())
 
 
 @functools.wraps(_code_to_hash_pyc)
