@@ -6,7 +6,6 @@
 import sys
 import inspect
 from types import CodeType
-from threading import Lock
 from typing import Callable, Optional
 from importlib import invalidate_caches
 from importlib.util import find_spec
@@ -65,8 +64,6 @@ class PPyPathFinder(PathFinder):
 
 class PPyLoader(SourceFileLoader):
     save_files = False
-    _skip_next_get_data = False
-    _get_code_lock = Lock()
 
     def __init__(
         self, fullname: str, path: str, *, command_line: Optional[str] = None
@@ -75,10 +72,6 @@ class PPyLoader(SourceFileLoader):
         self.command_line = command_line
 
     def get_data(self, filename: str) -> Optional[bytes]:
-        if self.__class__._skip_next_get_data:
-            self.__class__._skip_next_get_data = False
-            return None
-
         if filename == "-c":
             return preprocess(self.command_line, filename)[0].encode()
 
@@ -96,10 +89,6 @@ class PPyLoader(SourceFileLoader):
         if self.path in dependencies:
             dependencies[code] = dependencies.pop(self.path)
         return code
-
-    def get_code(self, fullname: str) -> CodeType:
-        with self._get_code_lock:
-            return super().get_code(fullname)
 
 
 LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS

@@ -12,7 +12,6 @@ from linecache import getlines
 from codeop import Compile, _maybe_compile
 from importlib import _bootstrap_external
 from importlib._bootstrap_external import (
-    _classify_pyc,
     _code_to_timestamp_pyc,
     _validate_timestamp_pyc,
     _code_to_hash_pyc,
@@ -111,22 +110,6 @@ def patched_source_hash(key, source):
     return source_hash(key, source)
 
 
-@functools.wraps(_classify_pyc)
-def patched_classify_pyc(data, name, exc_details):
-    flags = _classify_pyc(data, name, exc_details)
-
-    hash_based = flags & 0b1 != 0
-    if hash_based:
-        check_source = flags & 0b10 != 0
-        if _imp.check_hash_based_pycs != "never" and (
-            check_source or _imp.check_hash_based_pycs == "always"
-        ):
-            # set skip flag only when our loader is currently working
-            PPyLoader._skip_next_get_data = PPyLoader._get_code_lock.locked()
-
-    return flags
-
-
 def _get_file_mtime(file: str) -> int:
     return os.stat(file).st_mtime_ns
 
@@ -196,7 +179,6 @@ def patched_validate_hash_pyc(data, source_hash, name, exc_details):
     code = marshal.load(data_f)
     is_pwcp_pyc = code.co_filename.endswith(tuple(FILE_EXTENSIONS))
     if is_pwcp_pyc:
-        assert source_hash is None
         source_hash = _get_file_hash(code.co_filename)
     _validate_hash_pyc(data, source_hash, name, exc_details)
     if is_pwcp_pyc:
@@ -227,7 +209,6 @@ def apply_monkeypatch():
     codeop.Compile = patched_Compile
 
     _imp.source_hash = patched_source_hash
-    _bootstrap_external._classify_pyc = patched_classify_pyc
     _bootstrap_external._code_to_timestamp_pyc = patched_code_to_timestamp_pyc
     _bootstrap_external._validate_timestamp_pyc = (
         patched_validate_timestamp_pyc
