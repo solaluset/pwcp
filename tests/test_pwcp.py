@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import _imp
+import py_compile
 from io import StringIO
 from unittest.mock import patch
 from subprocess import STDOUT, CalledProcessError, check_output
@@ -148,7 +150,7 @@ def test_overriden_compile():
 
 
 @patch("time.strftime")
-def test_bytecode_caching(patched_strftime):
+def _test_bytecode_caching(output_override, patched_strftime):
     sys.dont_write_bytecode = False
     try:
         hello1 = "Hello, this file was cached at "
@@ -159,9 +161,12 @@ def test_bytecode_caching(patched_strftime):
 
         patched_strftime.return_value = "10:10:10"
 
-        time_str = time.strftime("%H:%M:%S")
-        hello1_full = hello1 + time_str + "\n"
-        hello2_full = hello2 + "\n"
+        if output_override is None:
+            time_str = time.strftime("%H:%M:%S")
+            hello1_full = hello1 + time_str + "\n"
+            hello2_full = hello2 + "\n"
+        else:
+            hello1_full = hello2_full = output_override
 
         with patch("sys.stdout", new=StringIO()):
             main(["tests/bytecode_test.ppy"])
@@ -183,6 +188,27 @@ def test_bytecode_caching(patched_strftime):
             assert sys.stdout.getvalue() == hello2_full
     finally:
         sys.dont_write_bytecode = True
+
+
+@pytest.mark.parametrize("mode", py_compile.PycInvalidationMode)
+def test_bytecode_caching(mode):
+    assert _imp.check_hash_based_pycs == "default"
+
+    pyc1 = py_compile.compile(
+        "tests/hello.py", invalidation_mode=mode, doraise=True
+    )
+    pyc2 = pyc1.replace("hello", "bytecode_test")
+    os.rename(pyc1, pyc2)
+    del pyc1
+
+    try:
+        _test_bytecode_caching(
+            "Hello world! (python)\n"
+            if mode == py_compile.PycInvalidationMode.UNCHECKED_HASH
+            else None
+        )
+    finally:
+        os.remove(pyc2)
 
 
 def test_is_package():
