@@ -50,7 +50,7 @@ parser.add_argument(
     " (for example, in exec call)",
 )
 parser.add_argument("target")
-parser.add_argument("args", nargs=argparse.ZERO_OR_MORE)
+parser.add_argument("args", nargs=argparse.REMAINDER)
 
 
 def main_with_params(
