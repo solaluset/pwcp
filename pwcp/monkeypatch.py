@@ -69,7 +69,7 @@ def patched_exec(src, *args, **kwargs):
 
 
 @functools.wraps(_maybe_compile)
-def patched_maybe_compile(compiler, src, filename, *args, **kwargs):
+def patched_maybe_compile(compiler, src, filename):
     try:
         src = maybe_preprocess(
             src, filename, getattr(compiler, "preprocessor", None)
@@ -83,7 +83,7 @@ def patched_maybe_compile(compiler, src, filename, *args, **kwargs):
         e.args = (msg, tuple(eargs))
         raise
     try:
-        return _maybe_compile(compiler, src, filename, *args, **kwargs)
+        return _maybe_compile(compiler, src, filename)
     except SyntaxError as e:
         if e.msg.startswith(
             ("unexpected EOF while parsing", "expected an indented block")
