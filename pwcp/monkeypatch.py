@@ -1,12 +1,11 @@
 import os
-import _imp
-from _imp import source_hash
 import codeop
 import marshal
 import builtins
 import functools
 import linecache
 from io import BytesIO
+from _imp import source_hash
 from builtins import compile, eval, exec
 from linecache import getlines
 from codeop import Compile, _maybe_compile
@@ -104,13 +103,6 @@ class patched_Compile(Compile):
         return super().__call__(source, filename, symbol, **kwargs)
 
 
-@functools.wraps(source_hash)
-def patched_source_hash(key, source):
-    if source is None:
-        return None
-    return source_hash(key, source)
-
-
 def _get_file_mtime(file: str) -> int:
     return os.stat(file).st_mtime_ns
 
@@ -157,7 +149,7 @@ def patched_validate_timestamp_pyc(
 
 def _get_file_hash(file):
     with open(file, "rb") as f:
-        return patched_source_hash(RAW_MAGIC_NUMBER, f.read())
+        return source_hash(RAW_MAGIC_NUMBER, f.read())
 
 
 @functools.wraps(_code_to_hash_pyc)
@@ -207,7 +199,6 @@ def apply_monkeypatch():
     codeop._maybe_compile = patched_maybe_compile
     codeop.Compile = patched_Compile
 
-    _imp.source_hash = patched_source_hash
     _bootstrap_external._code_to_timestamp_pyc = patched_code_to_timestamp_pyc
     _bootstrap_external._validate_timestamp_pyc = (
         patched_validate_timestamp_pyc
