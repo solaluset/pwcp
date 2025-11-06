@@ -21,7 +21,9 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 def test_regular_file():
     with patch("sys.stdout", new=StringIO()):
-        main(["tests/hello.py"])
+        # -h should be treated as argument to file, not PWCP
+        # and therefore ignored
+        main(["tests/hello.py", "-h"])
         assert sys.stdout.getvalue() == "Hello world! (python)\n"
 
 
