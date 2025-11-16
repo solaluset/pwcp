@@ -13,6 +13,9 @@ optional-dependencies = {tests = ["pytest"]}
 dynamic = ["version"]
 scripts = {pwcp = "pwcp:main"}
 
+[project.urls]
+Repository = "https://github.com/solaluset/pwcp"
+
 [tool.hatch.build.targets.wheel]
 packages = ["pwcp"]
 
