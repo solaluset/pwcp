@@ -84,8 +84,8 @@ class PPyLoader(SourceFileLoader):
 
         return data.encode()
 
-    def source_to_code(self, data: bytes, path: str) -> CodeType:
-        code = super().source_to_code(data, path)
+    def source_to_code(self, data: bytes, path: str, *args) -> CodeType:
+        code = super().source_to_code(data, path, *args)
         if self.path in dependencies:
             dependencies[code] = dependencies.pop(self.path)
         return code
