@@ -57,9 +57,20 @@ def test_run_module():
 
 
 def test_run_command():
-    with patch("sys.stdout", new=StringIO()):
-        main(["--preprocess-unknown-sources", "-c", "print(__LINE__)"])
-        assert sys.stdout.getvalue() == "1\n"
+    assert (
+        check_output(
+            [
+                sys.executable,
+                "-m",
+                "pwcp",
+                "--preprocess-unknown-sources",
+                "-c",
+                "import os; os.chdir('tests');"
+                "import a_module; print(__LINE__)",
+            ]
+        )
+        == b"1\n"
+    )
 
 
 def test_comments():

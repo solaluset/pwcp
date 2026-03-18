@@ -78,7 +78,7 @@ def main_with_params(
             else:
                 loader = SourceFileLoader
         else:
-            sys.path.insert(0, os.getcwd())
+            sys.path.insert(0, "")
             filename = "-c"
             loader = partial(hooks.PPyLoader, command_line=target)
         spec = util.spec_from_loader(
