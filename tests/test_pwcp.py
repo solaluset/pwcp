@@ -49,7 +49,9 @@ def test_ppy_file():
 
 
 def test_run_module():
-    with patch("sys.stdout", new=StringIO()):
+    with patch("sys.stdout", new=StringIO()), patch(
+        "sys.path", new=[ROOT_DIR]
+    ):
         main(["-m", "tests.a_module", "1", "2", "3"])
         assert sys.stdout.getvalue() == "tests.a_module.b = 6\n"
 
