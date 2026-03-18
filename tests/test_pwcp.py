@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import _imp
+import shutil
 import py_compile
 from io import StringIO
 from unittest.mock import patch
@@ -9,7 +10,9 @@ from subprocess import STDOUT, CalledProcessError, check_output
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+TESTS_DIR = os.path.dirname(__file__)
+ROOT_DIR = os.path.dirname(TESTS_DIR)
+sys.path.insert(0, ROOT_DIR)
 
 from pwcp import main  # noqa: E402
 from pwcp.utils import is_package  # noqa: E402
@@ -17,6 +20,18 @@ from pwcp.utils import is_package  # noqa: E402
 
 sys.dont_write_bytecode = True
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+
+
+def clean_pycache():
+    for parent, dirs, _ in os.walk(TESTS_DIR):
+        for directory in dirs:
+            if directory != "__pycache__":
+                continue
+            directory = os.path.join(parent, directory)
+            shutil.rmtree(directory)
+
+
+clean_pycache()
 
 
 def test_regular_file():
