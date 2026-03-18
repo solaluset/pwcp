@@ -3,63 +3,25 @@
 # https://stackoverflow.com/a/45168493/
 # https://stackoverflow.com/a/48671982/
 
+import os
 import sys
-import inspect
 from types import CodeType
 from typing import Callable, Optional
 from importlib import invalidate_caches
-from importlib.util import find_spec
 from importlib.machinery import (
     BYTECODE_SUFFIXES,
     SOURCE_SUFFIXES,
     FileFinder,
-    PathFinder as _PathFinder,
+    PathFinder,
     SourceFileLoader,
 )
 
 from .config import FILE_EXTENSIONS
 from .preprocessor import PyPreprocessor, preprocess, preprocess_file
-from .utils import import_module_copy, create_sys_clone
 from .monkeypatch import (
     apply_monkeypatch,
     dependencies,
 )
-
-
-# very hacky way to replace `sys` in the PathFinder with our own module
-# this is done because we need separate `path_hooks` and `path_importer_cache`
-original_pathfinder_module = inspect.getmodule(_PathFinder)
-pathfinder_module = import_module_copy(original_pathfinder_module.__name__)
-PathFinder = pathfinder_module.PathFinder
-vars(pathfinder_module).update(vars(original_pathfinder_module))
-pathfinder_module.sys = create_sys_clone()
-
-
-class PPyPathFinder(PathFinder):
-    """
-    An overridden PathFinder which will hunt for ppy files in sys.path
-    """
-
-    prefer_python = False
-
-    @classmethod
-    def find_spec(
-        cls, fullname: str, path: Optional[list] = None, target=None
-    ):
-        if cls.prefer_python:
-            index = sys.meta_path.index(cls)
-            del sys.meta_path[index]
-            try:
-                spec = find_spec(fullname)
-            finally:
-                sys.meta_path.insert(index, cls)
-            if spec:
-                return spec
-
-        spec = super().find_spec(fullname, path, target)
-        if spec is not None and spec.loader is not None:
-            return spec
-        return None
 
 
 class PPyLoader(SourceFileLoader):
@@ -94,6 +56,49 @@ class PPyLoader(SourceFileLoader):
 LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS
 
 
+class PPyPathFinder(PathFinder):
+    """
+    An overridden PathFinder which will hunt for ppy files in sys.path
+    """
+
+    hook = FileFinder.path_hook(LOADER_DETAILS)
+    cache = {}
+
+    @classmethod
+    def invalidate_caches(cls):
+        super().invalidate_caches()
+        cls.cache.clear()
+
+    @classmethod
+    def _path_hooks(cls, path):
+        try:
+            return cls.hook(path)
+        except ImportError:
+            return None
+
+    @classmethod
+    def _path_importer_cache(cls, path):
+        if path == "":
+            try:
+                path = os.getcwd()
+            except FileNotFoundError:
+                return None
+        try:
+            finder = cls.cache[path]
+        except KeyError:
+            finder = cls.cache[path] = cls._path_hooks(path)
+        return finder
+
+    @classmethod
+    def find_spec(
+        cls, fullname: str, path: Optional[list] = None, target=None
+    ):
+        spec = super().find_spec(fullname, path, target)
+        if spec is not None and spec.loader is not None:
+            return spec
+        return None
+
+
 def _install() -> Callable[..., None]:
     done = False
 
@@ -107,21 +112,24 @@ def _install() -> Callable[..., None]:
 
         # (re)setting global configuration
         PPyLoader.save_files = save_files
-        PPyPathFinder.prefer_python = prefer_python
         PyPreprocessor.default_disabled = not preprocess_unknown_sources
+
+        # insert the path finder
+        try:
+            sys.meta_path.remove(PPyPathFinder)
+        except ValueError:
+            pass
+        if prefer_python:
+            sys.meta_path.append(PPyPathFinder)
+        else:
+            sys.meta_path.insert(0, PPyPathFinder)
 
         if done:
             return
 
-        # insert the path finder
-        sys.meta_path.insert(0, PPyPathFinder)
-        pathfinder_module.sys.path_hooks.append(
-            FileFinder.path_hook(LOADER_DETAILS)
-        )
         # register our extension
         SOURCE_SUFFIXES.extend(FILE_EXTENSIONS)
         # clear any loaders that might already be in use by the FileFinder
-        sys.path_importer_cache.clear()
         invalidate_caches()
         # patch standard library
         apply_monkeypatch()
