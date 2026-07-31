@@ -99,7 +99,9 @@ def test_syntax_error():
             [sys.executable, "-m", "pwcp", "tests/syntax_error.ppy"],
             stderr=STDOUT,
         )
-    assert ctx.value.output.splitlines()[-3].strip() == b'print("hello")!'
+    lines = ctx.value.output.splitlines()
+    assert len(lines) == 4
+    assert lines[-3].strip() == b'print("hello")!'
 
 
 def test_type_error():
