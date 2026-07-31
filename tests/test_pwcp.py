@@ -104,6 +104,23 @@ def test_syntax_error():
     assert lines[-3].strip() == b'print("hello")!'
 
 
+def test_syntax_error_no_trimming():
+    with pytest.raises(CalledProcessError) as ctx:
+        check_output(
+            [
+                sys.executable,
+                "-m",
+                "pwcp",
+                "--no-exception-trimming",
+                "tests/syntax_error.ppy",
+            ],
+            stderr=STDOUT,
+        )
+    lines = ctx.value.output.splitlines()
+    assert len(lines) > 4
+    assert lines[-3].strip() == b'print("hello")!'
+
+
 def test_type_error():
     with pytest.raises(CalledProcessError) as ctx:
         check_output(

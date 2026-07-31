@@ -49,6 +49,12 @@ parser.add_argument(
     help="preprocess code even if filename is unknown"
     " (for example, in exec call)",
 )
+parser.add_argument(
+    "--no-exception-trimming",
+    dest="no_exception_trimming",
+    action="store_true",
+    help="Do not remove outer (PWCP code's) exception frames",
+)
 parser.add_argument("target")
 parser.add_argument("args", nargs=argparse.REMAINDER)
 
@@ -62,6 +68,7 @@ def main_with_params(
     prefer_python: bool,
     save_files: bool,
     preprocess_unknown_sources: bool,
+    no_exception_trimming: bool = False,
 ):
     hooks.install(
         prefer_python=prefer_python,
@@ -99,7 +106,9 @@ def main_with_params(
     module = util.module_from_spec(spec)
     vars(module).update(vars_override)
     sys.modules["__main__"] = module
-    sys.excepthook = create_exception_handler(module)
+    sys.excepthook = create_exception_handler(
+        None if no_exception_trimming else module
+    )
     orig_argv = sys.argv.copy()
     sys.argv.clear()
     sys.argv.append(module.__file__)
