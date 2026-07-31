@@ -28,8 +28,8 @@ def create_exception_handler(module: Optional[ModuleType]) -> Callable:
         ):
             tb = tb.tb_next
         if not tb:
-            tb = orig_tb
             if not isinstance(e, (SyntaxError, PreprocessorError)):
+                tb = orig_tb
                 print("Internal error:", file=sys.stderr)
         print_exception(e_type, e, tb)
 
