@@ -189,7 +189,7 @@ def patched_validate_hash_pyc(data, source_hash, name, exc_details):
 def apply_monkeypatch():
     global PPyLoader
 
-    from .hooks import PPyLoader
+    from .importers import PPyLoader
 
     linecache.getlines = patched_getlines
 
