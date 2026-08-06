@@ -5,7 +5,7 @@ from typing import Iterable
 from functools import partial
 from importlib import util
 
-from . import hooks
+from . import importers
 from .version import __version__
 from .utils import create_exception_handler, is_package
 
@@ -68,7 +68,7 @@ def main_with_params(
     preprocess_unknown_sources: bool,
     no_exception_trimming: bool = False,
 ):
-    hooks.install(
+    importers.install(
         prefer_python=prefer_python,
         save_files=save_files,
         preprocess_unknown_sources=preprocess_unknown_sources,
@@ -78,11 +78,11 @@ def main_with_params(
         if not c:
             filename = os.path.abspath(target)
             sys.path.insert(0, os.path.dirname(filename))
-            loader = hooks.PPyLoader
+            loader = importers.PPyLoader
         else:
             filename = "-c"
             sys.path.insert(0, "")
-            loader = partial(hooks.PPyLoader, command_line=target)
+            loader = partial(importers.PPyLoader, command_line=target)
         spec = util.spec_from_loader(
             "__main__",
             loader("__main__", filename),
