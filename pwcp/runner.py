@@ -4,10 +4,8 @@ import argparse
 from typing import Iterable
 from functools import partial
 from importlib import util
-from importlib.machinery import SourceFileLoader
 
 from . import hooks
-from .config import FILE_EXTENSIONS
 from .version import __version__
 from .utils import create_exception_handler, is_package
 
@@ -80,13 +78,10 @@ def main_with_params(
         if not c:
             filename = os.path.abspath(target)
             sys.path.insert(0, os.path.dirname(filename))
-            if filename.endswith(tuple(FILE_EXTENSIONS)):
-                loader = hooks.PPyLoader
-            else:
-                loader = SourceFileLoader
+            loader = hooks.PPyLoader
         else:
-            sys.path.insert(0, "")
             filename = "-c"
+            sys.path.insert(0, "")
             loader = partial(hooks.PPyLoader, command_line=target)
         spec = util.spec_from_loader(
             "__main__",

@@ -17,7 +17,7 @@ from importlib._bootstrap_external import (
     _validate_hash_pyc,
 )
 
-from .preprocessor import PyPreprocessor, maybe_preprocess, preprocessed_files
+from .preprocessing_funcs import maybe_preprocess, preprocessed_files
 from .config import FILE_EXTENSIONS
 from .utils import py_from_ppy_filename
 
@@ -52,19 +52,19 @@ def patched_getlines(filename, module_globals=None):
 
 @functools.wraps(compile)
 def patched_compile(src, filename, *args, **kwargs):
-    src = maybe_preprocess(src, filename)
+    src = maybe_preprocess(src, filename, {})
     return compile(src, filename, *args, **kwargs)
 
 
 @functools.wraps(eval)
 def patched_eval(src, *args):
-    src = maybe_preprocess(src, "<string>")
+    src = maybe_preprocess(src, "<string>", {})
     return eval(src, *args)
 
 
 @functools.wraps(exec)
 def patched_exec(src, *args, **kwargs):
-    src = maybe_preprocess(src, "<string>")
+    src = maybe_preprocess(src, "<string>", {})
     return exec(src, *args, **kwargs)
 
 
@@ -72,7 +72,7 @@ def patched_exec(src, *args, **kwargs):
 def patched_maybe_compile(compiler, src, filename, *args, **kwargs):
     try:
         src = maybe_preprocess(
-            src, filename, getattr(compiler, "preprocessor", None)
+            src, filename, getattr(compiler, "pwcp_data", {})
         )
     except SyntaxError as e:
         msg, eargs = e.args
@@ -96,10 +96,10 @@ def patched_maybe_compile(compiler, src, filename, *args, **kwargs):
 class patched_Compile(Compile):
     def __init__(self):
         super().__init__()
-        self.preprocessor = PyPreprocessor()
+        self.pwcp_data = {}
 
     def __call__(self, source, filename, symbol, **kwargs):
-        source = maybe_preprocess(source, filename, self.preprocessor)
+        source = maybe_preprocess(source, filename, self.pwcp_data)
         return super().__call__(source, filename, symbol, **kwargs)
 
 

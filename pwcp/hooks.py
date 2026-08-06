@@ -17,7 +17,8 @@ from importlib.machinery import (
 )
 
 from .config import FILE_EXTENSIONS
-from .preprocessor import PyPreprocessor, preprocess, preprocess_file
+from .preprocessor import PyPreprocessor
+from .preprocessing_funcs import preprocess, preprocess_file
 from .monkeypatch import (
     apply_monkeypatch,
     dependencies,
@@ -35,7 +36,7 @@ class PPyLoader(SourceFileLoader):
 
     def get_data(self, filename: str) -> Optional[bytes]:
         if filename == "-c":
-            return preprocess(self.command_line, filename)[0].encode()
+            return preprocess(self.command_line, filename, {})[0].encode()
 
         if filename.endswith(tuple(BYTECODE_SUFFIXES)):
             with open(filename, "rb") as f:
@@ -53,15 +54,12 @@ class PPyLoader(SourceFileLoader):
         return code
 
 
-LOADER_DETAILS = PPyLoader, FILE_EXTENSIONS
-
-
 class PPyPathFinder(PathFinder):
     """
     An overridden PathFinder which will hunt for ppy files in sys.path
     """
 
-    hook = FileFinder.path_hook(LOADER_DETAILS)
+    hook = None
     cache = {}
 
     @classmethod
@@ -113,6 +111,7 @@ def _install() -> Callable[..., None]:
         # (re)setting global configuration
         PPyLoader.save_files = save_files
         PyPreprocessor.default_disabled = not preprocess_unknown_sources
+        PPyPathFinder.hook = FileFinder.path_hook((PPyLoader, FILE_EXTENSIONS))
 
         # insert the path finder
         try:
@@ -124,13 +123,16 @@ def _install() -> Callable[..., None]:
         else:
             sys.meta_path.insert(0, PPyPathFinder)
 
+        # register our extension
+        SOURCE_SUFFIXES.extend(
+            set(FILE_EXTENSIONS).difference(SOURCE_SUFFIXES)
+        )
+        # clear any loaders that might already be in use by the FileFinder
+        invalidate_caches()
+
         if done:
             return
 
-        # register our extension
-        SOURCE_SUFFIXES.extend(FILE_EXTENSIONS)
-        # clear any loaders that might already be in use by the FileFinder
-        invalidate_caches()
         # patch standard library
         apply_monkeypatch()
 
