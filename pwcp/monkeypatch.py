@@ -22,7 +22,7 @@ from .config import FILE_EXTENSIONS
 from .utils import py_from_ppy_filename
 
 
-dependencies = {}
+pyc_data = {}
 
 BYTECODE_HEADER_LENGTH = 16
 BYTECODE_SIZE_LENGTH = 4
@@ -110,9 +110,9 @@ def _get_file_mtime(file: str) -> int:
 @functools.wraps(_code_to_timestamp_pyc)
 def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
     data = _code_to_timestamp_pyc(code, mtime, source_size)
-    if code in dependencies:
-        deps = dependencies.pop(code)
-        mtimes = {file: _get_file_mtime(file) for file in deps}
+    if code in pyc_data:
+        pyc = pyc_data.pop(code)
+        mtimes = {file: _get_file_mtime(file) for file in pyc}
         data.extend(marshal.dumps(mtimes))
     return data
 
@@ -154,12 +154,12 @@ def _get_file_hash(file):
 
 @functools.wraps(_code_to_hash_pyc)
 def patched_code_to_hash_pyc(code, source_hash, checked=True):
-    if code in dependencies:
+    if code in pyc_data:
         source_hash = _get_file_hash(code.co_filename)
     data = _code_to_hash_pyc(code, source_hash, checked)
-    if code in dependencies:
-        deps = dependencies.pop(code)
-        hashes = {file: _get_file_hash(file) for file in deps}
+    if code in pyc_data:
+        pyc = pyc_data.pop(code)
+        hashes = {file: _get_file_hash(file) for file in pyc}
         data.extend(marshal.dumps(hashes))
     return data
 
