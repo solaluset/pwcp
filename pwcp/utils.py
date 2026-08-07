@@ -57,8 +57,7 @@ def is_package(module_name: str) -> bool:
 
 
 def py_from_ppy_filename(filename: str) -> str:
-    file_path = os.path.splitext(filename)[0]
-    return file_path + ".py"
+    return filename + ".py"
 
 
 def get_file_size(file: str) -> int:

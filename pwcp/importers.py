@@ -18,7 +18,8 @@ from importlib.machinery import (
 
 from .config import FILE_EXTENSIONS
 from .hooks import PWCPHooks
-from .preprocessing_funcs import preprocess, preprocess_file
+from .utils import py_from_ppy_filename
+from .preprocessing_funcs import preprocess
 from .monkeypatch import (
     apply_monkeypatch,
     pyc_data,
@@ -36,21 +37,21 @@ class PPyLoader(SourceFileLoader):
 
     def get_data(self, filename: str) -> Optional[bytes]:
         if filename == "-c":
-            return preprocess(self.command_line, filename, {})[0].encode()
+            return self.command_line.encode()
 
-        if filename.endswith(tuple(BYTECODE_SUFFIXES)):
-            with open(filename, "rb") as f:
-                return f.read()
-
-        data, pyc = preprocess_file(self.path, self.save_files)
-        pyc_data[self.path] = pyc
-
-        return data.encode()
+        return super().get_data(filename)
 
     def source_to_code(self, data: bytes, path: str, *args) -> CodeType:
+        pyc = None
+        if not path.endswith(tuple(BYTECODE_SUFFIXES)):
+            data, pyc = preprocess(data.decode(), path, {})
+            data = data.encode()
+            if self.save_files:
+                with open(py_from_ppy_filename(path), "wb") as file:
+                    file.write(data)
         code = super().source_to_code(data, path, *args)
-        if self.path in pyc_data:
-            pyc_data[code] = pyc_data.pop(self.path)
+        if pyc is not None:
+            pyc_data[code] = pyc
         return code
 
 

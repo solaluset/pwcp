@@ -1,7 +1,6 @@
-from typing import Any, TextIO, Tuple, Union
+from typing import Any, TextIO, Union
 
 from .config import HOOKS
-from .utils import py_from_ppy_filename
 
 preprocessed_files = {}
 
@@ -26,17 +25,6 @@ def preprocess(
     preprocessed_files[filename] = src
 
     return src, result_data
-
-
-def preprocess_file(
-    filename: str, save_files: bool = False
-) -> Tuple[str, dict]:
-    with open(filename) as f:
-        res, pyc_data = preprocess(f, filename, {})
-    if save_files:
-        with open(py_from_ppy_filename(filename), "w") as f:
-            f.write(res)
-    return res, pyc_data
 
 
 def maybe_preprocess(src: Any, filename: str, data: dict) -> str:
