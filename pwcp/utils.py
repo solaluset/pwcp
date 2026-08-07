@@ -55,3 +55,11 @@ def is_package(module_name: str) -> bool:
 def py_from_ppy_filename(filename: str) -> str:
     file_path = os.path.splitext(filename)[0]
     return file_path + ".py"
+
+
+def get_file_size(file: str) -> int:
+    return os.stat(file).st_size
+
+
+def get_file_mtime(file: str) -> int:
+    return os.stat(file).st_mtime_ns
