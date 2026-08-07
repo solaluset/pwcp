@@ -40,11 +40,10 @@ parser.add_argument(
     help="save .ppy files to .py after preprocessing",
 )
 parser.add_argument(
-    "--PUS",
-    "--preprocess-unknown-sources",
-    dest="preprocess_unknown_sources",
+    "--skip-unknown-sources",
+    dest="skip_unknown_sources",
     action="store_true",
-    help="preprocess code even if filename is unknown"
+    help="do not preprocess code if filename is not recognized"
     " (for example, in exec call)",
 )
 parser.add_argument(
@@ -65,13 +64,13 @@ def main_with_params(
     c: bool,
     prefer_python: bool,
     save_files: bool,
-    preprocess_unknown_sources: bool,
+    skip_unknown_sources: bool = False,
     no_exception_trimming: bool = False,
 ):
     importers.install(
         prefer_python=prefer_python,
         save_files=save_files,
-        preprocess_unknown_sources=preprocess_unknown_sources,
+        skip_unknown_sources=skip_unknown_sources,
     )
     if not m:
         filename: str
