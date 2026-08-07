@@ -59,11 +59,11 @@ parser.add_argument("args", nargs=argparse.REMAINDER)
 def main_with_params(
     *,
     target: str,
-    args: Iterable[str],
-    m: bool,
-    c: bool,
-    prefer_python: bool,
-    save_files: bool,
+    args: Iterable[str] = (),
+    m: bool = False,
+    c: bool = False,
+    prefer_python: bool = False,
+    save_files: bool = False,
     skip_unknown_sources: bool = False,
     no_exception_trimming: bool = False,
 ):
