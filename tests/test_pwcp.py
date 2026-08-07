@@ -63,7 +63,6 @@ def test_run_command():
                 sys.executable,
                 "-m",
                 "pwcp",
-                "--preprocess-unknown-sources",
                 "-c",
                 "import os; os.chdir('tests');"
                 "import a_module; print(__LINE__)",
@@ -71,6 +70,16 @@ def test_run_command():
         )
         == b"1\n"
     )
+
+
+def test_skip_unknown_sources():
+    with patch("sys.stdout", new=StringIO()):
+        main(["tests/no-extension"])
+        assert sys.stdout.getvalue() == "pwcp\n"
+
+    with patch("sys.stdout", new=StringIO()):
+        main(["--skip-unknown-sources", "tests/no-extension"])
+        assert sys.stdout.getvalue() == "python\n"
 
 
 def test_comments():
@@ -165,7 +174,7 @@ f()
     ):
         ps1 = getattr(sys, "ps1", ">>> ")
         ps2 = getattr(sys, "ps2", "... ")
-        main(["--preprocess-unknown-sources", "-m", "code"])
+        main(["-m", "code"])
         assert (
             sys.stdout.getvalue()
             == ps1 * 2
@@ -190,7 +199,7 @@ print(1)
     with patch("sys.stdin", new=StringIO(code)), patch(
         "sys.stdout", new=StringIO()
     ):
-        main(["--preprocess-unknown-sources", "-m", "code"])
+        main(["-m", "code"])
         assert sys.stdout.getvalue() == ps1 + ps2 * 3 + "1\n" + ps1
 
 

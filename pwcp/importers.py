@@ -17,7 +17,7 @@ from importlib.machinery import (
 )
 
 from .config import FILE_EXTENSIONS
-from .preprocessor import PyPreprocessor
+from .hooks import PWCPHooks
 from .preprocessing_funcs import preprocess, preprocess_file
 from .monkeypatch import (
     apply_monkeypatch,
@@ -104,13 +104,13 @@ def _install() -> Callable[..., None]:
         *,
         save_files: bool,
         prefer_python: bool,
-        preprocess_unknown_sources: bool,
+        skip_unknown_sources: bool,
     ):
         nonlocal done
 
         # (re)setting global configuration
         PPyLoader.save_files = save_files
-        PyPreprocessor.default_disabled = not preprocess_unknown_sources
+        PWCPHooks.skip_unknown_sources = skip_unknown_sources
         PPyPathFinder.hook = FileFinder.path_hook((PPyLoader, FILE_EXTENSIONS))
 
         # insert the path finder

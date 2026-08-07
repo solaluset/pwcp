@@ -1,0 +1,4 @@
+py = "python"
+ppy = "pwcp"
+#define py ppy
+print(py)

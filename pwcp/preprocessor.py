@@ -1,6 +1,6 @@
 from io import StringIO
 from linecache import getline
-from typing import Optional, TextIO
+from typing import TextIO
 
 from pypp import Preprocessor
 
@@ -8,12 +8,8 @@ from .errors import PreprocessorError
 
 
 class PyPreprocessor(Preprocessor):
-    default_disabled = True
-
-    def __init__(self, disabled: Optional[bool] = None):
-        if disabled is None:
-            disabled = self.default_disabled
-        super().__init__(disabled=disabled)
+    def __init__(self):
+        super().__init__()
         self.included_files = []
 
     def write(self, file: TextIO):

@@ -1,6 +1,8 @@
-from abc import ABC, abstractmethod
 from typing import Any
+from abc import ABC, abstractmethod
+from importlib.machinery import SOURCE_SUFFIXES
 
+from .config import FILE_EXTENSIONS
 from .preprocessor import PyPreprocessor
 
 
@@ -20,14 +22,20 @@ class PreprocessorHooks(ABC):
 
 
 class PWCPHooks(PreprocessorHooks):
+    skip_unknown_sources = False
+
     def __init__(self):
         super().__init__("pwcp")
 
     def create_state(self) -> PyPreprocessor:
-        return PyPreprocessor(disabled=False)
+        return PyPreprocessor()
 
     def process(
         self, source: str, filename: str, preprocessor: PyPreprocessor
     ) -> tuple[str, list[str]]:
-        preprocessor.disabled = filename.endswith(".py")
+        if not filename.endswith(tuple(FILE_EXTENSIONS)):
+            if filename.endswith(tuple(SOURCE_SUFFIXES)):
+                preprocessor.disabled = True
+            else:
+                preprocessor.disabled = self.skip_unknown_sources
         return preprocessor.preprocess(source, filename)
