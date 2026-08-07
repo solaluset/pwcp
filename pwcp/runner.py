@@ -26,8 +26,7 @@ parser.add_argument(
     "-c", action="store_true", help="run target as command line"
 )
 parser.add_argument(
-    "--PP",
-    "--prefer-py",
+    "--prefer-python",
     dest="prefer_python",
     action="store_true",
     help="prefer .py files over .ppy when importing",
