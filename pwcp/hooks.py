@@ -73,32 +73,31 @@ class PWCPHooks(PreprocessorHooks):
     def create_pyc_data(self, data: list[str], pyc_type: PycType) -> dict:
         result = {"version": __version__}
         if pyc_type == PycType.TIMESTAMP_BASED:
-            result["files"] = {file: get_file_mtime(file) for file in data}
+            func = get_file_mtime
         elif pyc_type == PycType.HASH_BASED:
-            result["files"] = {file: get_file_hash(file) for file in data}
+            func = get_file_hash
         else:
             raise ValueError(f"unknown pyc type {pyc_type}")
+
+        result["files"] = {file: func(file) for file in data}
         return result
 
     def validate_pyc_data(self, data: dict, pyc_type: PycType) -> bool:
         if data["version"] != __version__:
             return False
         if pyc_type == PycType.TIMESTAMP_BASED:
-            for file, mtime in data["files"].items():
-                try:
-                    current_mtime = get_file_mtime(file)
-                except FileNotFoundError:
-                    continue
-                if mtime != current_mtime:
-                    return False
+            func = get_file_mtime
         elif pyc_type == PycType.HASH_BASED:
-            for file, hash_ in data["files"].items():
-                try:
-                    current_hash = get_file_hash(file)
-                except FileNotFoundError:
-                    continue
-                if hash_ != current_hash:
-                    return False
+            func = get_file_hash
         else:
             raise ValueError(f"unknown pyc type {pyc_type}")
+
+        for file, value in data["files"].items():
+            try:
+                current = func(file)
+            except FileNotFoundError:
+                continue
+            if value != current:
+                return False
+
         return True
