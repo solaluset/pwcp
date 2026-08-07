@@ -21,7 +21,7 @@ from .hooks import PWCPHooks
 from .preprocessing_funcs import preprocess, preprocess_file
 from .monkeypatch import (
     apply_monkeypatch,
-    dependencies,
+    pyc_data,
 )
 
 
@@ -42,15 +42,15 @@ class PPyLoader(SourceFileLoader):
             with open(filename, "rb") as f:
                 return f.read()
 
-        data, deps = preprocess_file(self.path, self.save_files)
-        dependencies[self.path] = deps
+        data, pyc = preprocess_file(self.path, self.save_files)
+        pyc_data[self.path] = pyc
 
         return data.encode()
 
     def source_to_code(self, data: bytes, path: str, *args) -> CodeType:
         code = super().source_to_code(data, path, *args)
-        if self.path in dependencies:
-            dependencies[code] = dependencies.pop(self.path)
+        if self.path in pyc_data:
+            pyc_data[code] = pyc_data.pop(self.path)
         return code
 
 

@@ -32,11 +32,11 @@ def preprocess_file(
     filename: str, save_files: bool = False
 ) -> Tuple[str, dict]:
     with open(filename) as f:
-        res, deps = preprocess(f, filename, {})
+        res, pyc_data = preprocess(f, filename, {})
     if save_files:
         with open(py_from_ppy_filename(filename), "w") as f:
             f.write(res)
-    return res, deps
+    return res, pyc_data
 
 
 def maybe_preprocess(src: Any, filename: str, data: dict) -> str:
