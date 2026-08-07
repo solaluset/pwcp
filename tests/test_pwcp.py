@@ -5,6 +5,7 @@ import _imp
 import shutil
 import py_compile
 from io import StringIO
+from pathlib import Path
 from unittest.mock import patch
 from subprocess import STDOUT, CalledProcessError, check_output
 
@@ -46,6 +47,21 @@ def test_ppy_file():
     with patch("sys.stdout", new=StringIO()):
         main(["tests/hello.ppy"])
         assert sys.stdout.getvalue() == "Hello world!\nNone world!\n"
+
+    assert not os.path.isfile("tests/hello.ppy.py")
+
+
+def test_save_files():
+    py_path = Path("tests/hello.ppy.py")
+    try:
+        with patch("sys.stdout", new=StringIO()):
+            main(["--save-files", "tests/hello.ppy"])
+            assert sys.stdout.getvalue() == "Hello world!\nNone world!\n"
+
+        assert py_path.is_file()
+
+    finally:
+        py_path.unlink(missing_ok=True)
 
 
 def test_run_module():
