@@ -115,19 +115,23 @@ def test_comments():
 
 
 def test_imports():
-    main(["tests/test_modules.ppy"])
-    assert sys.modules["hello"].__file__ == os.path.join(
-        os.path.abspath("tests"), "hello.ppy"
-    )
-    del sys.modules["hello"]
+    try:
+        main(["tests/test_modules.ppy"])
+        assert sys.modules["hello"].__file__ == os.path.join(
+            os.path.abspath("tests"), "hello.ppy"
+        )
+    finally:
+        sys.modules.pop("hello", None)
 
 
 def test_py_import():
-    main(["--prefer-py", "tests/test_modules.ppy"])
-    assert sys.modules["hello"].__file__ == os.path.join(
-        os.path.abspath("tests"), "hello.py"
-    )
-    del sys.modules["hello"]
+    try:
+        main(["--prefer-py", "tests/test_modules.ppy"])
+        assert sys.modules["hello"].__file__ == os.path.join(
+            os.path.abspath("tests"), "hello.py"
+        )
+    finally:
+        sys.modules.pop("hello", None)
 
 
 def test_syntax_error():
@@ -239,49 +243,45 @@ def test_overriden_compile():
 
 @patch("time.strftime")
 def _test_bytecode_caching(output_override, patched_strftime):
-    sys.dont_write_bytecode = False
-    try:
-        hello1 = "Hello, this file was cached at "
-        hello2 = "Just hello."
+    hello1 = "Hello, this file was cached at "
+    hello2 = "Just hello."
 
-        with open("tests/bytecode_test.pyh", "w") as f:
-            f.write(f"#define HELLO {hello1!r} __TIME__")
+    with open("tests/bytecode_test.pyh", "w") as f:
+        f.write(f"#define HELLO {hello1!r} __TIME__")
 
-        patched_strftime.return_value = "10:10:10"
+    patched_strftime.return_value = "10:10:10"
 
-        if output_override is None:
-            time_str = time.strftime("%H:%M:%S")
-            hello1_full = hello1 + time_str + "\n"
-            hello2_full = hello2 + "\n"
-        else:
-            hello1_full = hello2_full = output_override
+    if output_override is None:
+        time_str = time.strftime("%H:%M:%S")
+        hello1_full = hello1 + time_str + "\n"
+        hello2_full = hello2 + "\n"
+    else:
+        hello1_full = hello2_full = output_override
 
-        with patch("sys.stdout", new=StringIO()):
-            main(["tests/bytecode_test.ppy"])
-            assert sys.stdout.getvalue() == hello1_full
+    with patch("sys.stdout", new=StringIO()):
+        main(["tests/bytecode_test.ppy"])
+        assert sys.stdout.getvalue() == hello1_full
 
-        patched_strftime.return_value = "20:20:20"
+    patched_strftime.return_value = "20:20:20"
 
-        def _raise(*args, **kwargs):
-            raise AssertionError("preprocessor must not be called")
+    def _raise(*args, **kwargs):
+        raise AssertionError("preprocessor must not be called")
 
-        with (
-            patch("sys.stdout", new=StringIO()),
-            patch("pwcp.preprocessor.PyPreprocessor.__init__", new=_raise),
-        ):
-            main(["tests/bytecode_test.ppy"])
-            assert sys.stdout.getvalue() == hello1_full
+    with (
+        patch("sys.stdout", new=StringIO()),
+        patch("pwcp.preprocessor.PyPreprocessor.__init__", new=_raise),
+    ):
+        main(["tests/bytecode_test.ppy"])
+        assert sys.stdout.getvalue() == hello1_full
 
-        time.sleep(0.01)
+    time.sleep(0.01)
 
-        with open("tests/bytecode_test.pyh", "w") as f:
-            f.write(f"#define HELLO {hello2!r}")
+    with open("tests/bytecode_test.pyh", "w") as f:
+        f.write(f"#define HELLO {hello2!r}")
 
-        with patch("sys.stdout", new=StringIO()):
-            main(["tests/bytecode_test.ppy"])
-            assert sys.stdout.getvalue() == hello2_full
-    finally:
-        sys.dont_write_bytecode = True
+    with patch("sys.stdout", new=StringIO()):
+        main(["tests/bytecode_test.ppy"])
+        assert sys.stdout.getvalue() == hello2_full
 
 
 @pytest.mark.parametrize("mode", py_compile.PycInvalidationMode)
@@ -295,6 +295,7 @@ def test_bytecode_caching(mode):
     os.rename(pyc1, pyc2)
     del pyc1
 
+    sys.dont_write_bytecode = False
     try:
         _test_bytecode_caching(
             "Hello world! (python)\n"
@@ -302,6 +303,7 @@ def test_bytecode_caching(mode):
             else None
         )
     finally:
+        sys.dont_write_bytecode = True
         os.remove(pyc2)
 
 
