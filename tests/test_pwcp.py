@@ -1,4 +1,5 @@
 import os
+import gc
 import sys
 import time
 import _imp
@@ -51,6 +52,7 @@ def test_ppy_file():
 
     assert not os.path.isfile("tests/hello.ppy.py")
     # should not hold references to dead code
+    gc.collect()
     assert not pwcp.monkeypatch.pyc_data
 
 
