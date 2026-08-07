@@ -15,6 +15,7 @@ TESTS_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.dirname(TESTS_DIR)
 sys.path.insert(0, ROOT_DIR)
 
+import pwcp  # noqa: E402
 from pwcp import main  # noqa: E402
 from pwcp.utils import is_package  # noqa: E402
 
@@ -49,6 +50,8 @@ def test_ppy_file():
         assert sys.stdout.getvalue() == "Hello world!\nNone world!\n"
 
     assert not os.path.isfile("tests/hello.ppy.py")
+    # should not hold references to dead code
+    assert not pwcp.monkeypatch.pyc_data
 
 
 def test_save_files():
