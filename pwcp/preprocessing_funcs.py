@@ -1,3 +1,5 @@
+from io import BytesIO
+from tokenize import detect_encoding
 from typing import Any, TextIO, Union
 
 from .config import HOOKS
@@ -29,7 +31,8 @@ def preprocess(
 
 def maybe_preprocess(src: Any, filename: str, data: dict) -> str:
     if isinstance(src, bytes):
-        src = src.decode()
+        encoding, _ = detect_encoding(BytesIO(src).readline)
+        src = src.decode(encoding)
     if isinstance(src, str):
         # this is essential for interactive mode
         has_newline = src.endswith("\n")

@@ -5,6 +5,7 @@
 
 import os
 import sys
+import tokenize
 from types import CodeType
 from typing import Callable, Optional
 from importlib import invalidate_caches
@@ -37,15 +38,20 @@ class PPyLoader(SourceFileLoader):
 
     def get_data(self, filename: str) -> Optional[bytes]:
         if filename == "-c":
-            return self.command_line.encode()
+            return self.command_line.encode("utf-8")
 
-        return super().get_data(filename)
+        if filename.endswith(tuple(BYTECODE_SUFFIXES)):
+            with open(filename, "rb") as file:
+                return file.read()
+
+        with tokenize.open(filename) as file:
+            return file.read().encode("utf-8")
 
     def source_to_code(self, data: bytes, path: str, *args) -> CodeType:
         pyc = None
         if not path.endswith(tuple(BYTECODE_SUFFIXES)):
-            data, pyc = preprocess(data.decode(), path, {})
-            data = data.encode()
+            data, pyc = preprocess(data.decode("utf-8"), path, {})
+            data = data.encode("utf-8")
             if self.save_files:
                 with open(py_from_ppy_filename(path), "wb") as file:
                     file.write(data)
