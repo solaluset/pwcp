@@ -33,11 +33,11 @@ parser.add_argument(
     help="prefer .py files over .ppy when importing",
 )
 parser.add_argument(
-    "--SF",
     "--save-files",
     dest="save_files",
     action="store_true",
-    help="save .ppy files to .py after preprocessing",
+    help="save .ppy files to .py after preprocessing;"
+    " only useful for debugging because caching is done in `.pyc`s",
 )
 parser.add_argument(
     "--skip-unknown-sources",
