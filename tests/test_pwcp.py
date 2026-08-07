@@ -235,7 +235,13 @@ def _test_bytecode_caching(output_override, patched_strftime):
 
         patched_strftime.return_value = "20:20:20"
 
-        with patch("sys.stdout", new=StringIO()):
+        def _raise(*args, **kwargs):
+            raise AssertionError("preprocessor must not be called")
+
+        with (
+            patch("sys.stdout", new=StringIO()),
+            patch("pwcp.preprocessor.PyPreprocessor.__init__", new=_raise),
+        ):
             main(["tests/bytecode_test.ppy"])
             assert sys.stdout.getvalue() == hello1_full
 
