@@ -64,6 +64,12 @@ def test_save_files():
         py_path.unlink(missing_ok=True)
 
 
+def test_non_unicode():
+    with patch("sys.stdout", new=StringIO()):
+        main(["tests/non-unicode.ppy"])
+        assert sys.stdout.getvalue() == "1\n1\n"
+
+
 def test_run_module():
     with (
         patch("sys.stdout", new=StringIO()),

@@ -1,0 +1,9 @@
+#!/usr/bin/env pwcp
+# -*- coding: cp866 -*-
+
+#define ©®ã 1
+print(©®ã)
+
+if __name__ == "__main__":
+    with open(__file__, "rb") as file:
+        exec(file.read(), {"__name__": "exec"})
