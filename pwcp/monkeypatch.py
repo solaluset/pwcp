@@ -19,7 +19,7 @@ from importlib._bootstrap_external import (
 from .preprocessing_funcs import maybe_preprocess, preprocessed_files
 from .config import HOOKS
 from .hooks import PycType
-from .utils import py_from_ppy_filename, get_file_size, get_file_hash
+from .utils import py_from_ppy_filename
 
 
 pyc_data = {}
@@ -121,12 +121,8 @@ def _validate_pyc(pyc: dict, pyc_type: PycType) -> bool:
 
 @functools.wraps(_code_to_timestamp_pyc)
 def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
-    pyc = pyc_data.pop(code, None)
-    if pyc is not None:
-        # given size is not valid as it comes from processed source
-        source_size = get_file_size(code.co_filename)
     data = _code_to_timestamp_pyc(code, mtime, source_size)
-    if pyc is not None:
+    if (pyc := pyc_data.pop(code, None)) is not None:
         data.extend(_to_pyc(pyc, PycType.TIMESTAMP_BASED))
     return data
 
@@ -135,49 +131,43 @@ def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
 def patched_validate_timestamp_pyc(
     data, source_mtime, source_size, name, exc_details
 ):
+    _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
+
     data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
+    # skip code
     marshal.load(data_f)
-    pyc = None
     try:
         pyc = marshal.load(data_f)
     except Exception:
-        pass
-    _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
-    if pyc is not None:
-        if not _validate_pyc(pyc, PycType.TIMESTAMP_BASED):
-            raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
+        return
+    if not _validate_pyc(pyc, PycType.TIMESTAMP_BASED):
+        raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
 
 
 @functools.wraps(_code_to_hash_pyc)
 def patched_code_to_hash_pyc(code, source_hash, checked=True):
-    pyc = pyc_data.pop(code, None)
-    if pyc is not None:
-        # given hash is not valid as it comes from processed source
-        source_hash = get_file_hash(code.co_filename)
     data = _code_to_hash_pyc(code, source_hash, checked)
-    if pyc is not None:
+    if (pyc := pyc_data.pop(code, None)) is not None:
         data.extend(_to_pyc(pyc, PycType.HASH_BASED))
     return data
 
 
 @functools.wraps(_validate_hash_pyc)
 def patched_validate_hash_pyc(data, source_hash, name, exc_details):
+    _validate_hash_pyc(data, source_hash, name, exc_details)
+
     data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
-    code = marshal.load(data_f)
-    pyc = None
+    # skip code
+    marshal.load(data_f)
     try:
         pyc = marshal.load(data_f)
     except Exception:
-        pass
-    if pyc is not None:
-        source_hash = get_file_hash(code.co_filename)
-    _validate_hash_pyc(data, source_hash, name, exc_details)
-    if pyc is not None:
-        if not _validate_pyc(pyc, PycType.HASH_BASED):
-            raise ImportError(
-                f"hash in bytecode doesn't match hash of source {name!r}",
-                **exc_details,
-            )
+        return
+    if not _validate_pyc(pyc, PycType.HASH_BASED):
+        raise ImportError(
+            f"hash in bytecode doesn't match hash of source {name!r}",
+            **exc_details,
+        )
 
 
 def apply_monkeypatch():
