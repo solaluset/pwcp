@@ -102,6 +102,23 @@ class patched_Compile(Compile):
         return super().__call__(source, filename, symbol, **kwargs)
 
 
+def _to_pyc(pyc: dict, pyc_type: PycType) -> bytes:
+    for hook in HOOKS:
+        pyc[hook.name] = hook.create_pyc_data(pyc[hook.name], pyc_type)
+    return marshal.dumps(pyc)
+
+
+def _validate_pyc(pyc: dict, pyc_type: PycType) -> bool:
+    for hook in HOOKS:
+        pyc_data = pyc.pop(hook.name, None)
+        if pyc_data is None:
+            return False
+        if not hook.validate_pyc_data(pyc_data, pyc_type):
+            return False
+    # empty = all hooks validated
+    return not pyc
+
+
 @functools.wraps(_code_to_timestamp_pyc)
 def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
     pyc = pyc_data.pop(code, None)
@@ -110,11 +127,7 @@ def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
         source_size = get_file_size(code.co_filename)
     data = _code_to_timestamp_pyc(code, mtime, source_size)
     if pyc is not None:
-        for hook in HOOKS:
-            pyc[hook.name] = hook.create_pyc_data(
-                pyc[hook.name], PycType.TIMESTAMP_BASED
-            )
-        data.extend(marshal.dumps(pyc))
+        data.extend(_to_pyc(pyc, PycType.TIMESTAMP_BASED))
     return data
 
 
@@ -131,18 +144,8 @@ def patched_validate_timestamp_pyc(
         pass
     _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
     if pyc is not None:
-        for hook in HOOKS:
-            pyc_data = pyc.pop(hook.name, None)
-            if pyc_data is None:
-                break
-            if not hook.validate_pyc_data(pyc_data, PycType.TIMESTAMP_BASED):
-                break
-        else:
-            # check if any hook that created data is now missing
-            if not pyc:
-                return
-
-        raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
+        if not _validate_pyc(pyc, PycType.TIMESTAMP_BASED):
+            raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
 
 
 @functools.wraps(_code_to_hash_pyc)
@@ -153,11 +156,7 @@ def patched_code_to_hash_pyc(code, source_hash, checked=True):
         source_hash = get_file_hash(code.co_filename)
     data = _code_to_hash_pyc(code, source_hash, checked)
     if pyc is not None:
-        for hook in HOOKS:
-            pyc[hook.name] = hook.create_pyc_data(
-                pyc[hook.name], PycType.HASH_BASED
-            )
-        data.extend(marshal.dumps(pyc))
+        data.extend(_to_pyc(pyc, PycType.HASH_BASED))
     return data
 
 
@@ -174,21 +173,11 @@ def patched_validate_hash_pyc(data, source_hash, name, exc_details):
         source_hash = get_file_hash(code.co_filename)
     _validate_hash_pyc(data, source_hash, name, exc_details)
     if pyc is not None:
-        for hook in HOOKS:
-            pyc_data = pyc.pop(hook.name, None)
-            if pyc_data is None:
-                break
-            if not hook.validate_pyc_data(pyc_data, PycType.HASH_BASED):
-                break
-        else:
-            # check if any hook that created data is now missing
-            if not pyc:
-                return
-
-        raise ImportError(
-            f"hash in bytecode doesn't match hash of source {name!r}",
-            **exc_details,
-        )
+        if not _validate_pyc(pyc, PycType.HASH_BASED):
+            raise ImportError(
+                f"hash in bytecode doesn't match hash of source {name!r}",
+                **exc_details,
+            )
 
 
 def apply_monkeypatch():
