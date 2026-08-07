@@ -50,7 +50,7 @@ parser.add_argument(
     "--no-exception-trimming",
     dest="no_exception_trimming",
     action="store_true",
-    help="Do not remove outer (PWCP code's) exception frames",
+    help="do not remove outer (PWCP code's) exception frames",
 )
 parser.add_argument("target")
 parser.add_argument("args", nargs=argparse.REMAINDER)
