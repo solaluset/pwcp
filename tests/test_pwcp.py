@@ -49,8 +49,9 @@ def test_ppy_file():
 
 
 def test_run_module():
-    with patch("sys.stdout", new=StringIO()), patch(
-        "sys.path", new=[ROOT_DIR]
+    with (
+        patch("sys.stdout", new=StringIO()),
+        patch("sys.path", new=[ROOT_DIR]),
     ):
         main(["-m", "tests.a_module", "1", "2", "3"])
         assert sys.stdout.getvalue() == "tests.a_module.b = 6\n"
@@ -169,8 +170,9 @@ def f():
 
 f()
     """.strip()
-    with patch("sys.stdin", new=StringIO(code)), patch(
-        "sys.stdout", new=StringIO()
+    with (
+        patch("sys.stdin", new=StringIO(code)),
+        patch("sys.stdout", new=StringIO()),
     ):
         ps1 = getattr(sys, "ps1", ">>> ")
         ps2 = getattr(sys, "ps2", "... ")
@@ -196,8 +198,9 @@ f()
 print(1)
 #endif
     """.strip()
-    with patch("sys.stdin", new=StringIO(code)), patch(
-        "sys.stdout", new=StringIO()
+    with (
+        patch("sys.stdin", new=StringIO(code)),
+        patch("sys.stdout", new=StringIO()),
     ):
         main(["-m", "code"])
         assert sys.stdout.getvalue() == ps1 + ps2 * 3 + "1\n" + ps1
