@@ -11,9 +11,7 @@ Python with C preprocessor
 
 Or run built-in `code` module to start interactive console:
 
-`pwcp --preprocess-unknown-sources -m code`
-
-(`--preprocess-unknown-sources` is necessary because `<console>` is not a `.ppy` file)
+`pwcp -m code`
 
 Run `pwcp -h` for more options.
 
