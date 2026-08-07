@@ -1,12 +1,16 @@
 import os
 import sys
 import warnings
+from _imp import source_hash
 from typing import Callable, Optional, Type
 from traceback import print_exception
 from types import ModuleType, TracebackType
 from importlib.machinery import all_suffixes
+from importlib._bootstrap_external import MAGIC_NUMBER
 
 from .errors import PreprocessorError
+
+RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, "little")
 
 
 def create_exception_handler(module: Optional[ModuleType]) -> Callable:
@@ -63,3 +67,8 @@ def get_file_size(file: str) -> int:
 
 def get_file_mtime(file: str) -> int:
     return os.stat(file).st_mtime_ns
+
+
+def get_file_hash(file: str) -> bytes:
+    with open(file, "rb") as f:
+        return source_hash(RAW_MAGIC_NUMBER, f.read())

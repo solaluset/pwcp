@@ -5,7 +5,6 @@ import builtins
 import functools
 import linecache
 from io import BytesIO
-from _imp import source_hash
 from builtins import compile, eval, exec
 from linecache import getlines
 from codeop import Compile, _maybe_compile
@@ -18,16 +17,15 @@ from importlib._bootstrap_external import (
 )
 
 from .preprocessing_funcs import maybe_preprocess, preprocessed_files
-from .config import FILE_EXTENSIONS, HOOKS
+from .config import HOOKS
 from .hooks import PycType
-from .utils import py_from_ppy_filename, get_file_size
+from .utils import py_from_ppy_filename, get_file_size, get_file_hash
 
 
 pyc_data = {}
 
 BYTECODE_HEADER_LENGTH = 16
 BYTECODE_SIZE_LENGTH = 4
-RAW_MAGIC_NUMBER = int.from_bytes(_bootstrap_external.MAGIC_NUMBER, "little")
 
 
 @functools.wraps(getlines)
@@ -147,21 +145,19 @@ def patched_validate_timestamp_pyc(
         raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
 
 
-def _get_file_hash(file):
-    with open(file, "rb") as f:
-        return source_hash(RAW_MAGIC_NUMBER, f.read())
-
-
 @functools.wraps(_code_to_hash_pyc)
 def patched_code_to_hash_pyc(code, source_hash, checked=True):
     pyc = pyc_data.pop(code, None)
     if pyc is not None:
         # given hash is not valid as it comes from processed source
-        source_hash = _get_file_hash(code.co_filename)
+        source_hash = get_file_hash(code.co_filename)
     data = _code_to_hash_pyc(code, source_hash, checked)
     if pyc is not None:
-        hashes = {file: _get_file_hash(file) for file in pyc}
-        data.extend(marshal.dumps(hashes))
+        for hook in HOOKS:
+            pyc[hook.name] = hook.create_pyc_data(
+                pyc[hook.name], PycType.HASH_BASED
+            )
+        data.extend(marshal.dumps(pyc))
     return data
 
 
@@ -169,22 +165,30 @@ def patched_code_to_hash_pyc(code, source_hash, checked=True):
 def patched_validate_hash_pyc(data, source_hash, name, exc_details):
     data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
     code = marshal.load(data_f)
-    is_pwcp_pyc = code.co_filename.endswith(tuple(FILE_EXTENSIONS))
-    if is_pwcp_pyc:
-        source_hash = _get_file_hash(code.co_filename)
+    pyc = None
+    try:
+        pyc = marshal.load(data_f)
+    except Exception:
+        pass
+    if pyc is not None:
+        source_hash = get_file_hash(code.co_filename)
     _validate_hash_pyc(data, source_hash, name, exc_details)
-    if is_pwcp_pyc:
-        hashes = marshal.load(data_f)
-        for file, hash_ in hashes.items():
-            try:
-                current_hash = _get_file_hash(file)
-            except FileNotFoundError:
-                continue
-            if hash_ != current_hash:
-                raise ImportError(
-                    f"hash in bytecode doesn't match hash of source {name!r}",
-                    **exc_details,
-                )
+    if pyc is not None:
+        for hook in HOOKS:
+            pyc_data = pyc.pop(hook.name, None)
+            if pyc_data is None:
+                break
+            if not hook.validate_pyc_data(pyc_data, PycType.HASH_BASED):
+                break
+        else:
+            # check if any hook that created data is now missing
+            if not pyc:
+                return
+
+        raise ImportError(
+            f"hash in bytecode doesn't match hash of source {name!r}",
+            **exc_details,
+        )
 
 
 def apply_monkeypatch():

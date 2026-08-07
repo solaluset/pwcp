@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from importlib.machinery import SOURCE_SUFFIXES
 
 from .version import __version__
-from .utils import get_file_mtime
+from .utils import get_file_mtime, get_file_hash
 from .config import FILE_EXTENSIONS
 from .preprocessor import PyPreprocessor
 
@@ -75,7 +75,7 @@ class PWCPHooks(PreprocessorHooks):
         if pyc_type == PycType.TIMESTAMP_BASED:
             result["files"] = {file: get_file_mtime(file) for file in data}
         elif pyc_type == PycType.HASH_BASED:
-            ...
+            result["files"] = {file: get_file_hash(file) for file in data}
         else:
             raise ValueError(f"unknown pyc type {pyc_type}")
         return result
@@ -92,7 +92,13 @@ class PWCPHooks(PreprocessorHooks):
                 if mtime != current_mtime:
                     return False
         elif pyc_type == PycType.HASH_BASED:
-            ...
+            for file, hash_ in data["files"].items():
+                try:
+                    current_hash = get_file_hash(file)
+                except FileNotFoundError:
+                    continue
+                if hash_ != current_hash:
+                    return False
         else:
             raise ValueError(f"unknown pyc type {pyc_type}")
         return True
