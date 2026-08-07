@@ -19,7 +19,7 @@ def preprocess(
     for hook in HOOKS:
         if hook.name not in data:
             data[hook.name] = hook.create_state()
-        src, hook_data = hook.process(src, filename, data[hook.name])
+        src, hook_data = hook.process_source(src, filename, data[hook.name])
         result_data[hook.name] = hook_data
 
     # save preprocessed file to display actual SyntaxError

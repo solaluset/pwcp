@@ -18,8 +18,9 @@ from importlib._bootstrap_external import (
 )
 
 from .preprocessing_funcs import maybe_preprocess, preprocessed_files
-from .config import FILE_EXTENSIONS
-from .utils import py_from_ppy_filename
+from .config import FILE_EXTENSIONS, HOOKS
+from .hooks import PycType
+from .utils import py_from_ppy_filename, get_file_size
 
 
 pyc_data = {}
@@ -103,17 +104,19 @@ class patched_Compile(Compile):
         return super().__call__(source, filename, symbol, **kwargs)
 
 
-def _get_file_mtime(file: str) -> int:
-    return os.stat(file).st_mtime_ns
-
-
 @functools.wraps(_code_to_timestamp_pyc)
 def patched_code_to_timestamp_pyc(code, mtime=0, source_size=0):
     pyc = pyc_data.pop(code, None)
+    if pyc is not None:
+        # given size is not valid as it comes from processed source
+        source_size = get_file_size(code.co_filename)
     data = _code_to_timestamp_pyc(code, mtime, source_size)
     if pyc is not None:
-        mtimes = {file: _get_file_mtime(file) for file in pyc}
-        data.extend(marshal.dumps(mtimes))
+        for hook in HOOKS:
+            pyc[hook.name] = hook.create_pyc_data(
+                pyc[hook.name], PycType.TIMESTAMP_BASED
+            )
+        data.extend(marshal.dumps(pyc))
     return data
 
 
@@ -122,29 +125,26 @@ def patched_validate_timestamp_pyc(
     data, source_mtime, source_size, name, exc_details
 ):
     data_f = BytesIO(data[BYTECODE_HEADER_LENGTH:])
-    code = marshal.load(data_f)
-    is_pwcp_pyc = code.co_filename.endswith(tuple(FILE_EXTENSIONS))
-    if is_pwcp_pyc:
-        source_size = int.from_bytes(
-            data[
-                BYTECODE_HEADER_LENGTH
-                - BYTECODE_SIZE_LENGTH : BYTECODE_HEADER_LENGTH
-            ],
-            "little",
-            signed=False,
-        )
+    marshal.load(data_f)
+    pyc = None
+    try:
+        pyc = marshal.load(data_f)
+    except Exception:
+        pass
     _validate_timestamp_pyc(data, source_mtime, source_size, name, exc_details)
-    if is_pwcp_pyc:
-        mtimes = marshal.load(data_f)
-        for file, mtime in mtimes.items():
-            try:
-                current_mtime = _get_file_mtime(file)
-            except FileNotFoundError:
-                continue
-            if mtime != current_mtime:
-                raise ImportError(
-                    f"bytecode is stale for {name!r}", **exc_details
-                )
+    if pyc is not None:
+        for hook in HOOKS:
+            pyc_data = pyc.pop(hook.name, None)
+            if pyc_data is None:
+                break
+            if not hook.validate_pyc_data(pyc_data, PycType.TIMESTAMP_BASED):
+                break
+        else:
+            # check if any hook that created data is now missing
+            if not pyc:
+                return
+
+        raise ImportError(f"bytecode is stale for {name!r}", **exc_details)
 
 
 def _get_file_hash(file):
