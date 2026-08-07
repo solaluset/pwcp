@@ -8,6 +8,7 @@ from io import BytesIO
 from builtins import compile, eval, exec
 from linecache import getlines
 from codeop import Compile, _maybe_compile
+from weakref import WeakKeyDictionary
 from importlib import _bootstrap_external
 from importlib._bootstrap_external import (
     _code_to_timestamp_pyc,
@@ -22,7 +23,7 @@ from .hooks import PycType
 from .utils import py_from_ppy_filename
 
 
-pyc_data = {}
+pyc_data = WeakKeyDictionary()
 
 BYTECODE_HEADER_LENGTH = 16
 BYTECODE_SIZE_LENGTH = 4
