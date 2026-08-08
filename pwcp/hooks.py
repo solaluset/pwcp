@@ -61,13 +61,15 @@ class PWCPHooks(PreprocessorHooks):
         super().__init__("pwcp")
 
     def create_state(self) -> PyPreprocessor:
-        return PyPreprocessor()
+        return PyPreprocessor(disabled=None)
 
     def process_source(
         self, source: str, filename: str, preprocessor: PyPreprocessor
     ) -> tuple[str, list[str]]:
-        if not filename.endswith(tuple(FILE_EXTENSIONS)):
-            if filename.endswith(tuple(SOURCE_SUFFIXES)):
+        if preprocessor.disabled is None:
+            if filename.endswith(tuple(FILE_EXTENSIONS)):
+                preprocessor.disabled = False
+            elif filename.endswith(tuple(SOURCE_SUFFIXES)):
                 preprocessor.disabled = True
             else:
                 preprocessor.disabled = self.skip_unknown_sources

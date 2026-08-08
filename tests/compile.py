@@ -1,4 +1,5 @@
 import ast
+from codeop import Compile
 
 
 code = """
@@ -21,11 +22,16 @@ for func in (str.strip, str.encode, ast.parse):
     exec(code_obj, namespace)
     assert namespace["f"]() == 1
 
-for func in (eval, exec):
-    func(
-        """
+code2 = """
 #pragma pypp on
 #define a 1
 a
-    """
-    )
+"""
+
+for func in (eval, exec):
+    func(code2)
+
+compiler = Compile()
+for line in code2.splitlines():
+    # should retain state between calls
+    exec(compiler(line, __file__, "exec"))

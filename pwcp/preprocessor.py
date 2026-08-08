@@ -8,8 +8,8 @@ from .errors import PreprocessorError
 
 
 class PyPreprocessor(Preprocessor):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *, disabled: bool | None):
+        super().__init__(disabled=disabled)
         self.included_files = []
 
     def write(self, file: TextIO):
