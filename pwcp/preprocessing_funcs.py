@@ -4,7 +4,7 @@ from typing import Any, TextIO, Union
 
 from .config import HOOKS
 
-preprocessed_files = {}
+preprocessed_files: dict[str, str] = {}
 
 
 def preprocess(

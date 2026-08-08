@@ -36,7 +36,7 @@ class PPyLoader(SourceFileLoader):
         super().__init__(fullname, path)
         self.command_line = command_line
 
-    def get_data(self, filename: str) -> Optional[bytes]:
+    def get_data(self, filename: str) -> bytes:
         if filename == "-c":
             return self.command_line.encode("utf-8")
 

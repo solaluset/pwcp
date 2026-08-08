@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Generic, TypeVar
 from enum import Enum, auto
 from abc import ABC, abstractmethod
 from importlib.machinery import SOURCE_SUFFIXES
@@ -8,18 +8,21 @@ from .utils import get_file_mtime, get_file_hash
 from .config import FILE_EXTENSIONS
 from .preprocessor import PyPreprocessor
 
+S = TypeVar("S")
+D = TypeVar("D")
+
 
 class PycType(Enum):
     TIMESTAMP_BASED = auto()
     HASH_BASED = auto()
 
 
-class PreprocessorHooks(ABC):
+class PreprocessorHooks(ABC, Generic[S, D]):
     def __init__(self, name: str):
         self.name = name
 
     @abstractmethod
-    def create_state(self) -> Any:
+    def create_state(self) -> S:
         """
         Create state later passed to `process_source()`
         """
@@ -27,8 +30,8 @@ class PreprocessorHooks(ABC):
 
     @abstractmethod
     def process_source(
-        self, source: str, filename: str, state: Any
-    ) -> tuple[str, Any]:
+        self, source: str, filename: str, state: S
+    ) -> tuple[str, D]:
         """
         Apply source code modifications
         `state` is created with `create_state()`
@@ -37,7 +40,7 @@ class PreprocessorHooks(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_pyc_data(self, data: Any, pyc_type: PycType) -> dict:
+    def create_pyc_data(self, data: D, pyc_type: PycType) -> dict:
         """
         Turn `data` into marshallable dict to store in pyc
         """
