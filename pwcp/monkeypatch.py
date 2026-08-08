@@ -5,6 +5,8 @@ import builtins
 import functools
 import linecache
 from io import BytesIO
+from types import CodeType
+from collections.abc import MutableMapping
 from builtins import compile, eval, exec
 from linecache import getlines
 from codeop import Compile, _maybe_compile
@@ -23,7 +25,7 @@ from .hooks import PycType
 from .utils import py_from_ppy_filename
 
 
-pyc_data = WeakKeyDictionary()
+pyc_data: MutableMapping[CodeType, dict] = WeakKeyDictionary()
 
 BYTECODE_HEADER_LENGTH = 16
 BYTECODE_SIZE_LENGTH = 4
