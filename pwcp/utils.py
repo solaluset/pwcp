@@ -21,9 +21,12 @@ def create_exception_handler(module: Optional[ModuleType]) -> Callable:
     ):
         from .monkeypatch import preprocessed_files
 
-        if isinstance(e, SyntaxError) and preprocessed_files.get(e.filename):
+        if (
+            isinstance(e, SyntaxError)
+            and e.lineno
+            and (data := preprocessed_files.get(e.filename))
+        ):
             # replace raw text from file with actual code
-            data = preprocessed_files[e.filename]
             e.text = data.splitlines()[e.lineno - 1]
         # remove outer frames from traceback
         orig_tb = tb
