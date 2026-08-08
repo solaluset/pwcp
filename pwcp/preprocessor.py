@@ -1,6 +1,6 @@
 from io import StringIO
 from linecache import getline
-from typing import TextIO
+from typing import Optional, TextIO
 
 from pypp import Preprocessor
 
@@ -8,7 +8,7 @@ from .errors import PreprocessorError
 
 
 class PyPreprocessor(Preprocessor):
-    def __init__(self, *, disabled: bool | None):
+    def __init__(self, *, disabled: Optional[bool]):
         super().__init__(disabled=disabled)
         self.included_files = []
 
