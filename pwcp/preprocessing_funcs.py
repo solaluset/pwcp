@@ -1,18 +1,13 @@
 from io import BytesIO
 from tokenize import detect_encoding
-from typing import Any, TextIO, Union
+from typing import Any
 
 from .config import HOOKS
 
 preprocessed_files: dict[str, str] = {}
 
 
-def preprocess(
-    src: Union[str, TextIO], filename: str, data: dict
-) -> tuple[str, dict]:
-    if not isinstance(src, str):
-        src = src.read()
-
+def preprocess(src: str, filename: str, data: dict) -> tuple[str, dict]:
     # indicate that we started preprocessing
     preprocessed_files[filename] = None
 
