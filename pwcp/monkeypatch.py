@@ -19,7 +19,7 @@ from importlib._bootstrap_external import (
     _validate_hash_pyc,
 )
 
-from .preprocessing_funcs import maybe_preprocess, preprocessed_files
+from .preprocessor import maybe_preprocess, preprocessed_files
 from .config import HOOKS
 from .hooks import PycType
 from .utils import py_from_ppy_filename

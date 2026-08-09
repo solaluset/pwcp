@@ -20,7 +20,7 @@ from importlib.machinery import (
 from .config import FILE_EXTENSIONS
 from .hooks import PWCPHooks
 from .utils import py_from_ppy_filename
-from .preprocessing_funcs import preprocess
+from .preprocessor import preprocess
 from .monkeypatch import (
     apply_monkeypatch,
     pyc_data,
