@@ -77,12 +77,14 @@ def patched_maybe_compile(compiler, src, filename, *args, **kwargs):
             src, filename, getattr(compiler, "pwcp_data", {})
         )
     except SyntaxError as e:
-        msg, eargs = e.args
-        if msg.startswith("Unterminated"):
+        if e.msg and e.msg.startswith("Unterminated"):
             return None
+        if len(e.args) < 2 or not e.lineno:
+            raise
+        msg, eargs, *other = e.args
         eargs = list(eargs)
         eargs[3] = src.splitlines()[e.lineno - 1]
-        e.args = (msg, tuple(eargs))
+        e.args = (msg, tuple(eargs), *other)
         raise
     try:
         return _maybe_compile(compiler, src, filename, *args, **kwargs)
