@@ -64,7 +64,7 @@ class PWCPHooks(PreprocessorHooks):
 
     def process_source(
         self, source: str, filename: str, preprocessor: PyPreprocessor
-    ) -> tuple[str, list[str]]:
+    ) -> tuple[str, set[str]]:
         if preprocessor.disabled is None:
             _, ext = os.path.splitext(filename)
             preprocessor.disabled = FILE_EXTENSIONS.get(
@@ -73,7 +73,7 @@ class PWCPHooks(PreprocessorHooks):
 
         return preprocessor.preprocess(source, filename)
 
-    def create_pyc_data(self, data: list[str], pyc_type: PycType) -> dict:
+    def create_pyc_data(self, data: set[str], pyc_type: PycType) -> dict:
         result = {"version": __version__}
         if pyc_type == PycType.TIMESTAMP_BASED:
             func = get_file_mtime

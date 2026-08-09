@@ -12,7 +12,7 @@ from .errors import PreprocessorError
 class PyPreprocessor(Preprocessor):
     def __init__(self, *, disabled: Optional[bool]):
         super().__init__(disabled=disabled)
-        self.included_files = []
+        self.included_files = set()
 
     def write(self, file: TextIO):
         macros_backup = self.macros.copy()
@@ -28,10 +28,10 @@ class PyPreprocessor(Preprocessor):
     def on_file_open(
         self, is_system_include: bool, includepath: str
     ) -> TextIO:
-        self.included_files.append(includepath)
+        self.included_files.add(includepath)
         return super().on_file_open(is_system_include, includepath)
 
-    def preprocess(self, source: str, filename: str) -> tuple[str, list[str]]:
+    def preprocess(self, source: str, filename: str) -> tuple[str, set[str]]:
         self.parse(source, filename)
 
         out = StringIO()
