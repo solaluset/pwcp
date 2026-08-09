@@ -9,6 +9,7 @@ from importlib.machinery import all_suffixes
 from importlib._bootstrap_external import MAGIC_NUMBER
 
 from .errors import PreprocessorError
+from .preprocessor import preprocessed_files
 
 RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, "little")
 
@@ -19,8 +20,6 @@ def create_exception_handler(module: Optional[ModuleType]) -> Callable:
         e: BaseException,
         tb: Optional[TracebackType],
     ):
-        from .monkeypatch import preprocessed_files
-
         if (
             isinstance(e, SyntaxError)
             and e.lineno
