@@ -17,7 +17,7 @@ from importlib.machinery import (
     SourceFileLoader,
 )
 
-from .config import FILE_EXTENSIONS
+from .config import _DEFAULT_SUFFIXES, FILE_EXTENSIONS
 from .hooks import PWCPHooks
 from .utils import py_from_ppy_filename
 from .preprocessor import preprocess
@@ -119,7 +119,10 @@ def _install() -> Callable[..., None]:
         PPyLoader.save_files = save_files
         PWCPHooks.skip_unknown_sources = skip_unknown_sources
         PPyPathFinder.hook = FileFinder.path_hook(
-            (PPyLoader, tuple(FILE_EXTENSIONS))
+            (
+                PPyLoader,
+                tuple(set(FILE_EXTENSIONS).difference(_DEFAULT_SUFFIXES)),
+            )
         )
 
         # insert the path finder
