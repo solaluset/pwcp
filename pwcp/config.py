@@ -17,5 +17,7 @@ add_hook = HOOKS.append
 
 
 add_file_extension(".ppy")
-for ext in SOURCE_SUFFIXES:
+
+_DEFAULT_SUFFIXES = tuple(SOURCE_SUFFIXES)
+for ext in _DEFAULT_SUFFIXES:
     add_file_extension(ext, preprocess=False)
