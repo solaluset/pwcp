@@ -16,4 +16,3 @@ from .config import add_file_extension, add_hook
 from .hooks import PreprocessorHooks, PycType, PWCPHooks
 
 add_hook(PWCPHooks())
-add_file_extension(".ppy")

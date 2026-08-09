@@ -1,7 +1,7 @@
+import os
 from typing import Generic, TypeVar
 from enum import Enum, auto
 from abc import ABC, abstractmethod
-from importlib.machinery import SOURCE_SUFFIXES
 
 from .version import __version__
 from .utils import get_file_mtime, get_file_hash
@@ -66,12 +66,11 @@ class PWCPHooks(PreprocessorHooks):
         self, source: str, filename: str, preprocessor: PyPreprocessor
     ) -> tuple[str, list[str]]:
         if preprocessor.disabled is None:
-            if filename.endswith(tuple(FILE_EXTENSIONS)):
-                preprocessor.disabled = False
-            elif filename.endswith(tuple(SOURCE_SUFFIXES)):
-                preprocessor.disabled = True
-            else:
-                preprocessor.disabled = self.skip_unknown_sources
+            _, ext = os.path.splitext(filename)
+            preprocessor.disabled = FILE_EXTENSIONS.get(
+                ext, self.skip_unknown_sources
+            )
+
         return preprocessor.preprocess(source, filename)
 
     def create_pyc_data(self, data: list[str], pyc_type: PycType) -> dict:

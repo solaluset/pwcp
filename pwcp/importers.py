@@ -118,7 +118,9 @@ def _install() -> Callable[..., None]:
         # (re)setting global configuration
         PPyLoader.save_files = save_files
         PWCPHooks.skip_unknown_sources = skip_unknown_sources
-        PPyPathFinder.hook = FileFinder.path_hook((PPyLoader, FILE_EXTENSIONS))
+        PPyPathFinder.hook = FileFinder.path_hook(
+            (PPyLoader, tuple(FILE_EXTENSIONS))
+        )
 
         # insert the path finder
         try:
