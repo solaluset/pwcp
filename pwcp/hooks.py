@@ -21,12 +21,11 @@ class PreprocessorHooks(ABC, Generic[S, D]):
     def __init__(self, name: str):
         self.name = name
 
-    @abstractmethod
     def create_state(self) -> S:
         """
         Create state later passed to `process_source()`
         """
-        raise NotImplementedError
+        return None
 
     @abstractmethod
     def process_source(
