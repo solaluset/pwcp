@@ -1,6 +1,7 @@
 import os
 import gc
 import sys
+import ast
 import time
 import _imp
 import shutil
@@ -312,3 +313,7 @@ def test_is_package():
     assert is_package("tests.test_modules") is False
     with pytest.warns(match="Module file or directory not found"):
         assert is_package("inexistent") is False
+
+
+def test_ast_parse():
+    assert ast.parse("test").body[0].lineno == 1

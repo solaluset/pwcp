@@ -1,6 +1,8 @@
 import ast
 from codeop import Compile
 
+from pwcp import preprocess
+
 
 code = """
 /* force preprocessing */
@@ -16,7 +18,11 @@ def f():
 #endif
 """
 
-for func in (str.strip, str.encode, ast.parse):
+for func in (
+    str.strip,
+    str.encode,
+    lambda s: ast.parse(preprocess(s, "<test>", {})[0]),
+):
     code_obj = compile(func(code), __file__, "exec")
     namespace = {}
     exec(code_obj, namespace)

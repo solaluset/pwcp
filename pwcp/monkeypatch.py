@@ -1,4 +1,5 @@
 import os
+import ast
 import codeop
 import marshal
 import builtins
@@ -181,6 +182,9 @@ def apply_monkeypatch():
     from .importers import PPyLoader
 
     linecache.getlines = patched_getlines
+
+    # let ast use default compile
+    ast.compile = compile
 
     builtins.compile = patched_compile
     builtins.eval = patched_eval
