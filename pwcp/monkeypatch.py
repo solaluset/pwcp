@@ -20,7 +20,11 @@ from importlib._bootstrap_external import (
     _validate_hash_pyc,
 )
 
-from .preprocessor import maybe_preprocess, preprocessed_files
+from .preprocessor import (
+    PreprocessorError,
+    maybe_preprocess,
+    preprocessed_files,
+)
 from .config import HOOKS
 from .hooks import PycType
 from .utils import py_from_ppy_filename
@@ -77,9 +81,10 @@ def patched_maybe_compile(compiler, src, filename, *args, **kwargs):
         src = maybe_preprocess(
             src, filename, getattr(compiler, "pwcp_data", {})
         )
-    except SyntaxError as e:
+    except PreprocessorError as e:
         if e.msg and e.msg.startswith("Unterminated"):
             return None
+    except SyntaxError as e:
         if len(e.args) < 2 or not e.lineno:
             raise
         msg, eargs, *other = e.args
