@@ -23,7 +23,7 @@ class PyPreprocessor(Preprocessor):
             raise
 
     def on_error(self, file: str, line: int, msg: str):
-        raise SyntaxError(msg, (file, line, 1, getline(file, line)))
+        raise PreprocessorError(msg, (file, line, 1, getline(file, line)))
 
     def on_file_open(
         self, is_system_include: bool, includepath: str
@@ -37,7 +37,7 @@ class PyPreprocessor(Preprocessor):
         out = StringIO()
         try:
             self.write(out)
-        except SyntaxError:
+        except PreprocessorError:
             raise
         except Exception as e:
             msg = "internal preprocessor error"
