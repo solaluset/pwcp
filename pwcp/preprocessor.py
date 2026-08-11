@@ -14,14 +14,6 @@ class PyPreprocessor(Preprocessor):
         super().__init__(disabled=disabled)
         self.included_files = set()
 
-    def write(self, file: TextIO):
-        macros_backup = self.macros.copy()
-        try:
-            super().write(file)
-        except Exception:
-            self.macros = macros_backup
-            raise
-
     def on_error(self, file: str, line: int, msg: str):
         raise PreprocessorError(msg, (file, line, 1, getline(file, line)))
 
@@ -31,7 +23,7 @@ class PyPreprocessor(Preprocessor):
         self.included_files.add(includepath)
         return super().on_file_open(is_system_include, includepath)
 
-    def preprocess(self, source: str, filename: str) -> tuple[str, set[str]]:
+    def _preprocess(self, source: str, filename: str) -> tuple[str, set[str]]:
         self.parse(source, filename)
 
         out = StringIO()
@@ -52,6 +44,15 @@ class PyPreprocessor(Preprocessor):
             )
 
         return out.getvalue(), self.included_files
+
+    def preprocess(self, source: str, filename: str) -> tuple[str, set[str]]:
+        self.return_code = 0
+        macros_backup = self.macros.copy()
+        try:
+            return self._preprocess(source, filename)
+        except Exception:
+            self.macros = macros_backup
+            raise
 
 
 preprocessed_files: dict[str, str] = {}
