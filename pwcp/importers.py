@@ -3,11 +3,11 @@
 # https://stackoverflow.com/a/45168493/
 # https://stackoverflow.com/a/48671982/
 
+from __future__ import annotations
+
 import os
 import sys
 import tokenize
-from types import CodeType
-from typing import Callable, Optional
 from importlib import invalidate_caches
 from importlib.machinery import (
     BYTECODE_SUFFIXES,
@@ -16,22 +16,24 @@ from importlib.machinery import (
     PathFinder,
     SourceFileLoader,
 )
+from types import CodeType
+from typing import Callable, ClassVar
 
 from .config import _DEFAULT_SUFFIXES, FILE_EXTENSIONS
 from .hooks import PWCPHooks
-from .utils import py_from_ppy_filename
-from .preprocessor import preprocess
 from .monkeypatch import (
     apply_monkeypatch,
     pyc_data,
 )
+from .preprocessor import preprocess
+from .utils import py_from_ppy_filename
 
 
 class PPyLoader(SourceFileLoader):
     save_files = False
 
     def __init__(
-        self, fullname: str, path: str, *, command_line: Optional[str] = None
+        self, fullname: str, path: str, *, command_line: str | None = None
     ) -> None:
         super().__init__(fullname, path)
         self.command_line = command_line
@@ -67,7 +69,7 @@ class PPyPathFinder(PathFinder):
     """
 
     hook = None
-    cache = {}
+    cache: ClassVar[dict[str, FileFinder]] = {}
 
     @classmethod
     def invalidate_caches(cls):
@@ -95,9 +97,7 @@ class PPyPathFinder(PathFinder):
         return finder
 
     @classmethod
-    def find_spec(
-        cls, fullname: str, path: Optional[list] = None, target=None
-    ):
+    def find_spec(cls, fullname: str, path: list | None = None, target=None):
         spec = super().find_spec(fullname, path, target)
         if spec is not None and spec.loader is not None:
             return spec

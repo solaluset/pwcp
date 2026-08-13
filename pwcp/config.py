@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
 from importlib.machinery import SOURCE_SUFFIXES
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .hooks import PreprocessorHooks

@@ -3,7 +3,6 @@ from codeop import Compile
 
 from pwcp import preprocess
 
-
 code = """
 /* force preprocessing */
 #pragma pypp on

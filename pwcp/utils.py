@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 import os
 import sys
 import warnings
 from _imp import source_hash
-from typing import Callable, Optional, Type
+from importlib._bootstrap_external import MAGIC_NUMBER
+from importlib.machinery import all_suffixes
 from traceback import print_exception
 from types import ModuleType, TracebackType
-from importlib.machinery import all_suffixes
-from importlib._bootstrap_external import MAGIC_NUMBER
+from typing import Callable
 
 from .errors import PreprocessorError
 from .preprocessor import preprocessed_files
@@ -14,11 +16,11 @@ from .preprocessor import preprocessed_files
 RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, "little")
 
 
-def create_exception_handler(module: Optional[ModuleType]) -> Callable:
+def create_exception_handler(module: ModuleType | None) -> Callable:
     def handle_exc(
-        e_type: Type[BaseException],
+        e_type: type[BaseException],
         e: BaseException,
-        tb: Optional[TracebackType],
+        tb: TracebackType | None,
     ):
         if (
             isinstance(e, SyntaxError)
@@ -33,10 +35,9 @@ def create_exception_handler(module: Optional[ModuleType]) -> Callable:
             tb and module and tb.tb_frame.f_code.co_filename != module.__file__
         ):
             tb = tb.tb_next
-        if not tb:
-            if not isinstance(e, (SyntaxError, PreprocessorError)):
-                tb = orig_tb
-                print("Internal error:", file=sys.stderr)
+        if not tb and not isinstance(e, (SyntaxError, PreprocessorError)):
+            tb = orig_tb
+            print("Internal error:", file=sys.stderr)
         print_exception(e_type, e, tb)
 
     return handle_exc
