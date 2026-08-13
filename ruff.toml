@@ -1,0 +1,7 @@
+line-length = 79
+
+[lint]
+ignore = [
+  "S102",
+  "BLE001",
+]

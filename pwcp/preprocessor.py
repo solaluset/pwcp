@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from io import BytesIO, StringIO
 from linecache import getline
 from tokenize import detect_encoding
-from typing import Any, Optional, TextIO
+from typing import Any, TextIO
 
 from pypp import Preprocessor
 
@@ -10,7 +12,7 @@ from .errors import PreprocessorError
 
 
 class PyPreprocessor(Preprocessor):
-    def __init__(self, *, disabled: Optional[bool]):
+    def __init__(self, *, disabled: bool | None):
         super().__init__(disabled=disabled)
         self.included_files = set()
 

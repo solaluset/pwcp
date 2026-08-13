@@ -1,12 +1,12 @@
 import os
-from typing import Generic, TypeVar
-from enum import Enum, auto
 from abc import ABC, abstractmethod
+from enum import Enum, auto
+from typing import Generic, TypeVar
 
-from .version import __version__
-from .utils import get_file_mtime, get_file_hash
 from .config import FILE_EXTENSIONS
 from .preprocessor import PyPreprocessor
+from .utils import get_file_hash, get_file_mtime
+from .version import __version__
 
 S = TypeVar("S")
 D = TypeVar("D")

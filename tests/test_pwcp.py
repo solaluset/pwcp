@@ -1,15 +1,15 @@
-import os
-import gc
-import sys
-import ast
-import time
 import _imp
-import shutil
+import ast
+import gc
+import os
 import py_compile
+import shutil
+import sys
+import time
 from io import StringIO
 from pathlib import Path
-from unittest.mock import patch
 from subprocess import STDOUT, CalledProcessError, check_output
+from unittest.mock import patch
 
 import pytest
 
@@ -17,10 +17,9 @@ TESTS_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.dirname(TESTS_DIR)
 sys.path.insert(0, ROOT_DIR)
 
-import pwcp  # noqa: E402
-from pwcp import main  # noqa: E402
-from pwcp.utils import is_package  # noqa: E402
-
+import pwcp
+from pwcp import main
+from pwcp.utils import is_package
 
 sys.dont_write_bytecode = True
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -93,8 +92,10 @@ def test_run_command():
                 "-m",
                 "pwcp",
                 "-c",
-                "import os; os.chdir('tests');"
-                "import a_module; print(__LINE__)",
+                (
+                    "import os; os.chdir('tests');"
+                    "import a_module; print(__LINE__)"
+                ),
             ]
         )
         == b"1\n"

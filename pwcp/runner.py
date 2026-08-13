@@ -1,14 +1,13 @@
+import argparse
 import os
 import sys
-import argparse
-from typing import Iterable
+from collections.abc import Iterable
 from functools import partial
 from importlib import util
 
 from . import importers
-from .version import __version__
 from .utils import create_exception_handler, is_package
-
+from .version import __version__
 
 parser = argparse.ArgumentParser(
     (

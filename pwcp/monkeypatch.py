@@ -1,34 +1,33 @@
-import os
 import ast
-import codeop
-import marshal
 import builtins
+import codeop
 import functools
 import linecache
-from io import BytesIO
-from types import CodeType
-from collections.abc import MutableMapping
+import marshal
+import os
 from builtins import compile, eval, exec
-from linecache import getlines
 from codeop import Compile, _maybe_compile
-from weakref import WeakKeyDictionary
+from collections.abc import MutableMapping
 from importlib import _bootstrap_external
 from importlib._bootstrap_external import (
-    _code_to_timestamp_pyc,
-    _validate_timestamp_pyc,
     _code_to_hash_pyc,
+    _code_to_timestamp_pyc,
     _validate_hash_pyc,
+    _validate_timestamp_pyc,
 )
+from io import BytesIO
+from linecache import getlines
+from types import CodeType
+from weakref import WeakKeyDictionary
 
+from .config import HOOKS
+from .hooks import PycType
 from .preprocessor import (
     PreprocessorError,
     maybe_preprocess,
     preprocessed_files,
 )
-from .config import HOOKS
-from .hooks import PycType
 from .utils import py_from_ppy_filename
-
 
 pyc_data: MutableMapping[CodeType, dict] = WeakKeyDictionary()
 
